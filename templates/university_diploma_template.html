@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>University Diploma Certificate</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 297mm;
+            height: 210mm;
+            font-family: 'Georgia', serif;
+            background: #fff;
+            color: #1a365d;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .container {
+            width: 297mm;
+            height: 210mm;
+            padding: 10mm;
+            background: #fdfaf6;
+            position: relative;
+        }
+
+        .outer-border {
+            width: 100%;
+            height: 100%;
+            border: 2mm solid #1a365d;
+            padding: 4mm;
+        }
+
+        .inner-border {
+            width: 100%;
+            height: 100%;
+            border: 0.5mm solid #1a365d;
+            padding: 15mm;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header {
+            text-align: center;
+        }
+
+        .title {
+            font-size: 38pt;
+            font-weight: bold;
+            color: #1a365d;
+            margin-bottom: 5mm;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            max-width: 250mm;
+            margin-left: auto;
+            margin-right: auto;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 14pt;
+            font-style: italic;
+            color: #4a5568;
+            margin-bottom: 5mm;
+        }
+
+        .body {
+            text-align: center;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .presented-to {
+            font-size: 16pt;
+            margin-bottom: 5mm;
+        }
+
+        .recipient {
+            font-size: 42pt;
+            font-weight: bold;
+            font-family: 'Old English Text MT', 'Georgia', serif;
+            color: #2d3748;
+            margin-bottom: 8mm;
+        }
+
+        .description {
+            font-size: 13pt;
+            color: #4a5568;
+            line-height: 1.6;
+            max-width: 220mm;
+            margin-left: auto;
+            margin-right: auto;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .course-name {
+            font-size: 24pt;
+            font-weight: bold;
+            font-style: italic;
+            color: #1a365d;
+            margin: 5mm 0;
+        }
+
+        .seal {
+            width: 35mm;
+            height: 35mm;
+            background: #c05621;
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 7pt;
+            text-align: center;
+            font-weight: bold;
+            border: 2px solid #ed8936;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin: 5mm 0;
+            position: relative;
+        }
+
+        .seal-zigzag {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 2px dashed #fff;
+            border-radius: 50%;
+        }
+
+        <div class="footer"><table style="width: 100%; border-collapse: collapse;"><tr><td style="width: 50%; text-align: center; vertical-align: bottom;"><div class="footer-item"><p class="value"> {
+                {
+                issue_date
+            }
+        }
+
+        </p><div class="line" style="margin: 2mm auto 0 auto;"></div><p class="label">Given this day</p></div></td><td style="width: 50%; text-align: center; vertical-align: bottom;"><div class="footer-item"> {
+            % if signature_image_url %
+        }
+
+        <div style="margin-bottom: 2mm;"><img src="{{signature_image_url}}" alt="Signature" style="max-height: 15mm;"></div> {
+            % endif %
+        }
+
+        <div class="line" style="margin: 0 auto;"></div><p class="value"> {
+                {
+                signature_name
+            }
+        }
+
+        </p><p class="label">Chancellor of the University</p></div></td></tr></table></div></div></div></div></body></html>

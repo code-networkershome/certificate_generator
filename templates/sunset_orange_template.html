@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Sunset Orange Certificate</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 297mm;
+            height: 210mm;
+            font-family: 'Outfit', sans-serif;
+            background: #fff;
+            color: #2d3436;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .container {
+            width: 297mm;
+            height: 210mm;
+            padding: 10mm;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%);
+            position: relative;
+        }
+
+        .card {
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 15mm;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 5px solid #fff;
+            text-align: center;
+        }
+
+        .header {
+            margin-bottom: 10mm;
+        }
+
+        .title {
+            font-size: 38pt;
+            font-weight: 800;
+            color: #ef4444;
+            text-transform: uppercase;
+            margin-bottom: 2mm;
+            letter-spacing: -1px;
+            max-width: 250mm;
+            margin-left: auto;
+            margin-right: auto;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 14pt;
+            color: #f97316;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+        }
+
+        .body {
+            padding: 5mm 0;
+        }
+
+        .recipient {
+            font-size: 42pt;
+            font-weight: 900;
+            color: #333;
+            margin: 6mm 0;
+            position: relative;
+            display: inline-block;
+        }
+
+        .recipient::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 6px;
+            background: linear-gradient(to right, #ef4444, #f97316);
+            border-radius: 3px;
+        }
+
+        .description {
+            font-size: 14pt;
+            color: #666;
+            line-height: 1.6;
+            max-width: 220mm;
+            margin-left: auto;
+            margin-right: auto;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .course-name {
+            font-size: 20pt;
+            font-weight: bold;
+            color: #f97316;
+            margin: 5mm 0;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 15mm;
+            left: 20mm;
+            right: 20mm;
+        }
+
+        .footer-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .footer-table td {
+            width: 33.33%;
+            text-align: center;
+            vertical-align: bottom;
+            padding: 0 5mm;
+        }
+
+        .footer-item {
+            text-align: center;
+        }
+
+        .label {
+            font-size: 9pt;
+            color: #999;
+            text-transform: uppercase;
+            margin-top: 2mm;
+        }
+
+        .value {
+            font-size: 11pt;
+            font-weight: 600;
+            color: #555;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                {% if logo_url %}
+                <img src="{{logo_url}}" alt="Logo" style="max-height: 18mm; margin-bottom: 4mm;">
+                {% endif %}
+                <h1 class="title">{{certificate_title or "Success Mastered"}}</h1>
+                <p class="subtitle">{{certificate_subtitle or "DYNAMIC SKILLS CERTIFICATION"}}</p>
+            </div>
+            <div class="body">
+                <p style="font-size: 15pt; color: #777;">Congratulations to</p>
+                <h2 class="recipient">{{student_name}}</h2>
+                <p class="description">
+                    {{description_text or "for their energy, dedication, and the successful attainment of professional
+                    mastery in"}}
+                </p>
+                <p class="course-name">{{course_name}}</p>
+            </div>
+            <div class="footer">
+                <table class="footer-table">
+                    <tr>
+                        <td>
+                            <div class="footer-item">
+                                <p class="value">{{issue_date}}</p>
+                                <p class="label">Date</p>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="footer-item">
+                                {% if signature_image_url %}
+                                <img src="{{signature_image_url}}" alt="Signature"
+                                    style="max-height: 12mm; margin-bottom: 2mm;">
+                                {% endif %}
+                                <p class="value">{{signature_name}}</p>
+                                <p class="label">{{issuing_authority}}</p>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="footer-item">
+                                <p class="value">{{certificate_id}}</p>
+                                <p class="label">ID</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

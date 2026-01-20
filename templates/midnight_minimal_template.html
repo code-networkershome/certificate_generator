@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Midnight Minimal Certificate</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 297mm;
+            height: 210mm;
+            font-family: 'Inter', sans-serif;
+            background: #111;
+            color: #fff;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .container {
+            width: 297mm;
+            height: 210mm;
+            padding: 25mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .header {
+            border-bottom: 1px solid #333;
+            padding-bottom: 10mm;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            max-height: 15mm;
+            filter: grayscale(1) invert(1);
+        }
+
+        .title-group {
+            text-align: right;
+        }
+
+        .title {
+            font-size: 32pt;
+            font-weight: 200;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            max-width: 200mm;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .subtitle {
+            font-size: 10pt;
+            color: #666;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .body {
+            margin: 20mm 0;
+        }
+
+        .presented-to {
+            font-size: 11pt;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 5mm;
+        }
+
+        .recipient {
+            font-size: 46pt;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 8mm;
+            letter-spacing: -1px;
+        }
+
+        .description {
+            font-size: 14pt;
+            color: #888;
+            line-height: 1.6;
+            font-weight: 300;
+            max-width: 220mm;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .course-name {
+            font-size: 18pt;
+            font-weight: 600;
+            color: #fff;
+            margin-top: 4mm;
+        }
+
+        .footer {
+            width: 100%;
+            margin-top: 15mm;
+        }
+
+        .footer table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .footer td {
+            vertical-align: bottom;
+            text-align: left;
+            padding-right: 20mm;
+        }
+
+        .label {
+            font-size: 8pt;
+            color: #444;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 2mm;
+        }
+
+        .value {
+            font-size: 12pt;
+            font-weight: 400;
+            color: #aaa;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            {% if logo_url %}
+            <img src="{{logo_url}}" alt="Logo" class="logo">
+            {% else %}
+            <div style="width: 15mm; height: 15mm; border: 2px solid #333;"></div>
+            {% endif %}
+            <div class="title-group">
+                <h1 class="title">{{certificate_title or "CERTIFICATION"}}</h1>
+                <p class="subtitle">{{certificate_subtitle or "OFFICIAL TRANSCRIPT"}}</p>
+            </div>
+        </div>
+        <div class="body">
+            <p class="presented-to" style="margin-top: 10mm;">Awarded to</p>
+            <h2 class="recipient">{{student_name}}</h2>
+            <p class="description">
+                {{description_text or "For the successful completion of the requirements for"}}
+            </p>
+            <p class="course-name">{{course_name}}</p>
+            {% if custom_body %}
+            <p class="description" style="margin-top: 5mm;">{{custom_body}}</p>
+            {% endif %}
+        </div>
+        <div class="footer">
+            <table>
+                <tr>
+                    <td>
+                        <div class="footer-item">
+                            <p class="value">{{issue_date}}</p>
+                            <div style="border-top: 1px solid #333; width: 40mm; margin-top: 1mm;"></div>
+                            <p class="label">Date</p>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="footer-item">
+                            <p class="value">{{signature_name}}</p>
+                            <div style="border-top: 1px solid #333; width: 60mm; margin-top: 1mm;"></div>
+                            <p class="label">{{issuing_authority}}</p>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="footer-item">
+                            <p class="value">{{certificate_id}}</p>
+                            <div style="border-top: 1px solid #333; width: 40mm; margin-top: 1mm;"></div>
+                            <p class="label">Record ID</p>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</body>
+
+</html>

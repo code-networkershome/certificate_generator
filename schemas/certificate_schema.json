@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://networkershome.com/schemas/certificate-input.json",
+  "title": "Certificate Input Schema",
+  "description": "JSON Schema for validating certificate generation input data",
+  "type": "object",
+  "properties": {
+    "student_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "description": "Full name of the certificate recipient"
+    },
+    "course_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "description": "Name of the course or certification"
+    },
+    "issue_date": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "description": "Certificate issue date in YYYY-MM-DD format"
+    },
+    "certificate_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 50,
+      "pattern": "^[A-Za-z0-9\\-]+$",
+      "description": "Unique certificate identifier (e.g., NH-2026-00123)"
+    },
+    "issuing_authority": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "description": "Name of the organization issuing the certificate"
+    },
+    "signature_name": {
+      "type": "string",
+      "maxLength": 255,
+      "description": "Name/title of the signatory (e.g., Director)"
+    },
+    "signature_image_url": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https?://",
+      "description": "URL to the signature image"
+    },
+    "logo_url": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https?://",
+      "description": "URL to the organization logo"
+    }
+  },
+  "required": [
+    "student_name",
+    "course_name",
+    "issue_date",
+    "certificate_id",
+    "issuing_authority"
+  ],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "student_name": "John Doe",
+      "course_name": "AWS Cloud Practitioner",
+      "issue_date": "2026-01-20",
+      "certificate_id": "NH-2026-00123",
+      "issuing_authority": "NetworkersHome",
+      "signature_name": "Director",
+      "signature_image_url": "https://example.com/sign.png",
+      "logo_url": "https://example.com/logo.png"
+    }
+  ]
+}

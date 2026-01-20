@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Global Network Certificate</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 297mm;
+            height: 210mm;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #fff;
+            color: #1e293b;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .container {
+            width: 297mm;
+            height: 210mm;
+            padding: 15mm;
+            background: #f8fafc url('https://www.transparenttextures.com/patterns/natural-paper.png');
+            position: relative;
+        }
+
+        .main {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            padding: 20mm;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .header {
+            margin-bottom: 5mm;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            max-height: 15mm;
+        }
+
+        .title-box {
+            text-align: right;
+        }
+
+        .title {
+            font-size: 32pt;
+            font-weight: 300;
+            color: #0f172a;
+            text-transform: uppercase;
+            max-width: 200mm;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .subtitle {
+            font-size: 10pt;
+            color: #64748b;
+            letter-spacing: 4px;
+        }
+
+        .body {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .recipient {
+            font-size: 46pt;
+            font-weight: 800;
+            color: #1e293b;
+            margin: 8mm 0;
+            letter-spacing: -2px;
+        }
+
+        .description {
+            font-size: 14pt;
+            color: #475569;
+            line-height: 1.6;
+            max-width: 220mm;
+            margin-left: auto;
+            margin-right: auto;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .course-name {
+            font-size: 20pt;
+            font-weight: bold;
+            color: #3b82f6;
+            margin: 4mm 0;
+        }
+
+        <div class="footer"><table style="width: 100%; border-collapse: collapse;"><tr><td style="width: 33.33%; text-align: center; vertical-align: bottom;"><div class="footer-item"><p class="value"> {
+                {
+                issue_date
+            }
+        }
+
+        </p><p class="label">Issuance Date</p></div></td><td style="width: 33.33%; text-align: center; vertical-align: bottom;"><div class="footer-item"> {
+            % if signature_image_url %
+        }
+
+        <div style="margin-bottom: 2mm;"><img src="{{signature_image_url}}" alt="Signature" style="max-height: 12mm;"></div> {
+            % endif %
+        }
+
+        <p class="value"> {
+                {
+                signature_name
+            }
+        }
+
+        </p><p class="label">Governing Authority</p></div></td><td style="width: 33.33%; text-align: center; vertical-align: bottom;"><div class="footer-item"><p class="value"> {
+                {
+                certificate_id
+            }
+        }
+
+        </p><p class="label">Network ID</p></div></td></tr></table></div></div></div></body></html>

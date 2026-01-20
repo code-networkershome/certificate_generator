@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Vibrant Tech Certificate</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 297mm;
+            height: 210mm;
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+            color: #fff;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .container {
+            width: 297mm;
+            height: 210mm;
+            padding: 15mm;
+            background: #0f172a;
+            position: relative;
+        }
+
+        .grid-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(#334155 1px, transparent 1px);
+            background-size: 20px 20px;
+            opacity: 0.3;
+        }
+
+        .content {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            height: 100%;
+            border: 2px solid #38bdf8;
+            border-radius: 8px;
+            padding: 20mm;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            text-align: center;
+        }
+
+        .header {
+            margin-bottom: 5mm;
+        }
+
+        .title {
+            font-size: 38pt;
+            font-weight: 800;
+            color: #38bdf8;
+            text-transform: uppercase;
+            max-width: 250mm;
+            margin-left: auto;
+            margin-right: auto;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 12pt;
+            color: #94a3b8;
+            letter-spacing: 5px;
+            margin-top: 2mm;
+        }
+
+        .body {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .recipient {
+            font-size: 44pt;
+            font-weight: 800;
+            color: #fff;
+            margin: 6mm 0;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .description {
+            font-size: 13pt;
+            color: #94a3b8;
+            line-height: 1.6;
+            max-width: 220mm;
+            margin-left: auto;
+            margin-right: auto;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .course-name {
+            font-size: 22pt;
+            font-weight: bold;
+            color: #fff;
+            margin: 4mm 0;
+        }
+
+        <div class="footer"><table style="width: 100%; border-collapse: collapse;"><tr><td style="width: 33.33%; text-align: center; vertical-align: bottom;"><div class="footer-item"><p class="value"> {
+                {
+                issue_date
+            }
+        }
+
+        </p><p class="label">Timestamp</p></div></td><td style="width: 33.33%; text-align: center; vertical-align: bottom;"><div class="footer-item"> {
+            % if signature_image_url %
+        }
+
+        <div style="margin-bottom: 2mm;"><img src="{{signature_image_url}}" alt="Signature"
+
+        style="max-height: 12mm; filter: brightness(2);"></div> {
+            % endif %
+        }
+
+        <p class="value"> {
+                {
+                signature_name
+            }
+        }
+
+        </p><p class="label">CTO / Course Lead</p></div></td><td style="width: 33.33%; text-align: center; vertical-align: bottom;"><div class="footer-item"><p class="value"> {
+                {
+                certificate_id
+            }
+        }
+
+        </p><p class="label">Auth Hash</p></div></td></tr></table></div></div></div></body></html>

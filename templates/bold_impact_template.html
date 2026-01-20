@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Bold Impact Certificate</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 297mm;
+            height: 210mm;
+            font-family: 'Arial Black', sans-serif;
+            background: #000;
+            color: #fff;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .container {
+            width: 297mm;
+            height: 210mm;
+            padding: 10mm;
+            display: flex;
+            flex-direction: column;
+            border: 15px solid #fff;
+        }
+
+        .header {
+            background: #fff;
+            color: #000;
+            padding: 10mm;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .title {
+            font-size: 50pt;
+            font-weight: 900;
+            line-height: 1;
+            max-width: 200mm;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .subtitle {
+            font-size: 12pt;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            margin-top: 2mm;
+        }
+
+        .body {
+            flex-grow: 1;
+            padding: 15mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .recipient {
+            font-size: 64pt;
+            font-weight: 900;
+            color: #fff;
+            margin: 5mm 0;
+            letter-spacing: -4px;
+        }
+
+        .description {
+            font-size: 14pt;
+            color: #aaa;
+            line-height: 1.4;
+            font-family: 'Arial', sans-serif;
+            max-width: 220mm;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .course-name {
+            font-size: 24pt;
+            font-weight: bold;
+            color: #fff;
+            margin-top: 5mm;
+            text-transform: uppercase;
+            background: #333;
+            padding: 2mm 5mm;
+            display: inline-block;
+        }
+
+        .footer {
+            margin-top: 10mm;
+            padding: 10mm;
+            border-top: 1px solid #333;
+        }
+
+        .footer-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .footer-table td {
+            width: 33.33%;
+            vertical-align: bottom;
+            text-align: center;
+        }
+
+        .label {
+            font-size: 9pt;
+            color: #555;
+            text-transform: uppercase;
+            margin-top: 2mm;
+        }
+
+        .value {
+            font-size: 13pt;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">{{certificate_title or "LEVEL UP!"}}</h1>
+            {% if logo_url %}
+            <img src="{{logo_url}}" alt="Logo" style="max-height: 20mm; filter: grayscale(1);">
+            {% endif %}
+        </div>
+        <div class="body">
+            <p style="font-size: 14pt; color: #555;">ACHIEVED BY</p>
+            <h2 class="recipient">{{student_name}}</h2>
+            <p class="description">
+                {{description_text or "FOR THE CRUSHING PERFORMANCE AND SUCCESSFUL COMPLETION OF"}}
+            </p>
+            <p class="course-name">{{course_name}}</p>
+        </div>
+        <div class="footer">
+            <table class="footer-table">
+                <tr>
+                    <td style="text-align: left;">
+                        <div class="footer-item">
+                            <p class="value">{{issue_date}}</p>
+                            <p class="label">Date Logged</p>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="footer-item">
+                            <p class="value">{{certificate_id}}</p>
+                            <p class="label">System ID</p>
+                        </div>
+                    </td>
+                    <td style="text-align: right;">
+                        <div class="footer-item">
+                            <p class="value">{{signature_name}}</p>
+                            <p class="label">{{issuing_authority}}</p>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</body>
+
+</html>

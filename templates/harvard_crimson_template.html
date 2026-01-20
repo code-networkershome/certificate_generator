@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Harvard Crimson Certificate</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 297mm;
+            height: 210mm;
+            font-family: 'Times New Roman', 'Georgia', serif;
+            background: #fffef8;
+            color: #1c1c1c;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .certificate {
+            width: 297mm;
+            height: 210mm;
+            padding: 8mm;
+            position: relative;
+            background: linear-gradient(135deg, #fffef8 0%, #faf6e8 50%, #fffef8 100%);
+        }
+
+        /* Outer ornate border */
+        .border-outer {
+            width: 100%;
+            height: 100%;
+            border: 5px solid #a51c30;
+            position: relative;
+            padding: 4mm;
+        }
+
+        /* Middle decorative border */
+        .border-middle {
+            width: 100%;
+            height: 100%;
+            border: 2px solid #a51c30;
+            position: relative;
+            padding: 4mm;
+        }
+
+        /* Inner border */
+        .border-inner {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #c5a572;
+            padding: 10mm 15mm;
+            position: relative;
+            background: rgba(255, 254, 248, 0.8);
+        }
+
+        /* Ornate corner decorations */
+        .corner-ornament {
+            position: absolute;
+            width: 25mm;
+            height: 25mm;
+            border: 3px solid #a51c30;
+        }
+
+        .corner-ornament::before {
+            content: '';
+            position: absolute;
+            width: 8mm;
+            height: 8mm;
+            background: #a51c30;
+            border-radius: 50%;
+        }
+
+        .corner-tl {
+            top: 3mm;
+            left: 3mm;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        .corner-tl::before {
+            top: -4mm;
+            left: -4mm;
+        }
+
+        .corner-tr {
+            top: 3mm;
+            right: 3mm;
+            border-left: none;
+            border-bottom: none;
+        }
+
+        .corner-tr::before {
+            top: -4mm;
+            right: -4mm;
+        }
+
+        .corner-bl {
+            bottom: 3mm;
+            left: 3mm;
+            border-right: none;
+            border-top: none;
+        }
+
+        .corner-bl::before {
+            bottom: -4mm;
+            left: -4mm;
+        }
+
+        .corner-br {
+            bottom: 3mm;
+            right: 3mm;
+            border-left: none;
+            border-top: none;
+        }
+
+        .corner-br::before {
+            bottom: -4mm;
+            right: -4mm;
+        }
+
+        /* Official seal */
+        .seal {
+            position: absolute;
+            bottom: 22mm;
+            right: 22mm;
+            width: 30mm;
+            height: 30mm;
+            border: 3px solid #a51c30;
+            border-radius: 50%;
+            text-align: center;
+            font-size: 7pt;
+            color: #a51c30;
+            font-weight: bold;
+            background: radial-gradient(circle, #fffef8 0%, #f5f0dc 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            line-height: 1.3;
+        }
+
+        .seal::before {
+            content: '';
+            position: absolute;
+            width: 26mm;
+            height: 26mm;
+            border: 1px solid #a51c30;
+            border-radius: 50%;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 6mm;
+        }
+
+        .logo {
+            max-height: 20mm;
+            max-width: 55mm;
+            margin-bottom: 4mm;
+        }
+
+        .institution {
+            font-size: 14pt;
+            color: #a51c30;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            margin-bottom: 3mm;
+            font-weight: bold;
+        }
+
+        .title {
+            font-size: 38pt;
+            font-weight: bold;
+            color: #1c1c1c;
+            font-style: italic;
+            margin-bottom: 2mm;
+            max-width: 250mm;
+            margin-left: auto;
+            margin-right: auto;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 12pt;
+            color: #555555;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        /* Body content */
+        .content {
+            text-align: center;
+            padding: 6mm 0;
+        }
+
+        .presented-to {
+            font-size: 13pt;
+            color: #444444;
+            margin-bottom: 4mm;
+            font-style: italic;
+        }
+
+        .recipient-name {
+            font-size: 36pt;
+            font-weight: bold;
+            color: #1c1c1c;
+            font-family: 'Times New Roman', serif;
+            margin-bottom: 5mm;
+            padding-bottom: 3mm;
+            border-bottom: 2px solid #c5a572;
+            display: inline-block;
+            min-width: 140mm;
+        }
+
+        .description {
+            font-size: 13pt;
+            color: #444444;
+            line-height: 1.7;
+            margin: 3mm auto;
+            max-width: 220mm;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .course-name {
+            font-size: 18pt;
+            font-weight: bold;
+            color: #a51c30;
+            margin: 4mm 0;
+            font-style: italic;
+        }
+
+        /* Footer */
+        .footer {
+            position: absolute;
+            bottom: 12mm;
+            left: 15mm;
+            right: 55mm;
+        }
+
+        .footer-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .footer-table td {
+            width: 33.33%;
+            text-align: center;
+            vertical-align: bottom;
+            padding: 0 8mm;
+        }
+
+        .signature-img {
+            max-height: 12mm;
+            max-width: 35mm;
+            margin-bottom: 2mm;
+        }
+
+        .signature-line {
+            border-top: 1px solid #1c1c1c;
+            padding-top: 3mm;
+            margin-top: 3mm;
+        }
+
+        .signature-name {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #1c1c1c;
+        }
+
+        .signature-title {
+            font-size: 9pt;
+            color: #555555;
+            font-style: italic;
+        }
+
+        .certificate-id {
+            font-family: 'Courier New', monospace;
+            font-size: 8pt;
+            color: #888888;
+            margin-top: 2mm;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="certificate">
+        <div class="border-outer">
+            <div class="corner-ornament corner-tl"></div>
+            <div class="corner-ornament corner-tr"></div>
+            <div class="corner-ornament corner-bl"></div>
+            <div class="corner-ornament corner-br"></div>
+
+            <div class="border-middle">
+                <div class="border-inner">
+                    <div class="seal">
+                        OFFICIAL<br>SEAL<br>✦
+                    </div>
+
+                    <!-- Header -->
+                    <div class="header">
+                        {% if logo_image %}
+                        <img src="{{ logo_image }}" alt="Logo" class="logo"><br>
+                        {% endif %}
+                        <div class="institution">{{ issuing_authority }}</div>
+                        <div class="title">{{ certificate_title | default('Certificate of Achievement') }}</div>
+                        <div class="subtitle">{{ certificate_subtitle | default('Academic Excellence') }}</div>
+                    </div>
+
+                    <!-- Body -->
+                    <div class="content">
+                        <p class="presented-to">This is to certify that</p>
+                        <div class="recipient-name">{{ student_name }}</div>
+                        <p class="description">{{ description_text | default('has successfully completed all
+                            requirements and demonstrated exceptional proficiency in') }}</p>
+                        <div class="course-name">{{ course_name }}</div>
+                        {% if custom_body %}
+                        <p class="description">{{ custom_body }}</p>
+                        {% else %}
+                        <p class="description">In witness whereof, we have hereunto set our hands and affixed the seal
+                            of the institution.</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="footer">
+                        <table class="footer-table">
+                            <tr>
+                                <td>
+                                    <div class="signature-line">
+                                        <div class="signature-name">{{ issue_date }}</div>
+                                        <div class="signature-title">Date Conferred</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if signature_image %}
+                                    <img src="{{ signature_image }}" alt="Signature" class="signature-img"><br>
+                                    {% endif %}
+                                    <div class="signature-line">
+                                        <div class="signature-name">{{ signature_name }}</div>
+                                        <div class="signature-title">Authorized Signatory</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="signature-line">
+                                        <div class="signature-name">Registrar</div>
+                                        <div class="certificate-id">Reg. No: {{ certificate_id }}</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

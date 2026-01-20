@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Modern Gradient Certificate</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 297mm;
+            height: 210mm;
+            font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .certificate {
+            width: 297mm;
+            height: 210mm;
+            position: relative;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            overflow: hidden;
+        }
+
+        /* Animated Gradient Orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(40px);
+            opacity: 0.4;
+        }
+
+        .orb-1 {
+            width: 200mm;
+            height: 200mm;
+            background: #4f46e5;
+            top: -50mm;
+            right: -30mm;
+        }
+
+        .orb-2 {
+            width: 150mm;
+            height: 150mm;
+            background: #ec4899;
+            bottom: -40mm;
+            left: -20mm;
+        }
+
+        .orb-3 {
+            width: 100mm;
+            height: 100mm;
+            background: #8b5cf6;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .inner {
+            position: relative;
+            width: calc(100% - 16mm);
+            height: calc(100% - 16mm);
+            margin: 8mm;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 15mm 20mm;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .header {
+            text-align: center;
+        }
+
+        .logo {
+            max-height: 20mm;
+            margin-bottom: 5mm;
+        }
+
+        .badge-row {
+            display: flex;
+            gap: 3mm;
+            margin-bottom: 5mm;
+        }
+
+        .badge {
+            padding: 2mm 5mm;
+            border-radius: 20px;
+            font-size: 8pt;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .badge-purple {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .badge-pink {
+            background: linear-gradient(135deg, #ec4899, #f472b6);
+            color: white;
+        }
+
+        .title {
+            font-size: 40pt;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea, #764ba2, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 2mm;
+            max-width: 250mm;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 12pt;
+            color: #6b7280;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        .divider {
+            width: 60mm;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #ec4899);
+            border-radius: 2px;
+            margin: 6mm 0;
+        }
+
+        .body {
+            text-align: center;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .presented-to {
+            font-size: 11pt;
+            color: #9ca3af;
+            margin-bottom: 3mm;
+        }
+
+        .recipient {
+            font-size: 34pt;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 5mm;
+        }
+
+        .description {
+            font-size: 12pt;
+            color: #6b7280;
+            line-height: 1.6;
+            max-width: 220mm;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .course-wrapper {
+            margin: 5mm 0;
+        }
+
+        .course {
+            display: inline-block;
+            font-size: 16pt;
+            font-weight: 700;
+            color: white;
+            padding: 4mm 12mm;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .footer {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .footer-item {
+            text-align: center;
+            min-width: 60mm;
+        }
+
+        .signature-img {
+            max-height: 14mm;
+            margin-bottom: 2mm;
+        }
+
+        .footer-line {
+            width: 50mm;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #d1d5db, transparent);
+            margin: 0 auto 3mm;
+        }
+
+        .value {
+            font-size: 11pt;
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .label {
+            font-size: 9pt;
+            color: #9ca3af;
+            margin-top: 1mm;
+        }
+
+        .cert-id {
+            font-family: 'SF Mono', 'Consolas', monospace;
+            font-size: 8pt;
+            color: #9ca3af;
+            background: #f3f4f6;
+            padding: 1mm 4mm;
+            border-radius: 4px;
+            margin-top: 2mm;
+            display: inline-block;
+        }
+
+        /* Decorative dots */
+        .dots {
+            position: absolute;
+            opacity: 0.1;
+        }
+
+        .dots-tl {
+            top: 10mm;
+            left: 10mm;
+            width: 30mm;
+            height: 30mm;
+            background-image: radial-gradient(#667eea 2px, transparent 2px);
+            background-size: 5mm 5mm;
+        }
+
+        .dots-br {
+            bottom: 10mm;
+            right: 10mm;
+            width: 30mm;
+            height: 30mm;
+            background-image: radial-gradient(#ec4899 2px, transparent 2px);
+            background-size: 5mm 5mm;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="certificate">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+
+        <div class="inner">
+            <div class="dots dots-tl"></div>
+            <div class="dots dots-br"></div>
+
+            <div class="header">
+                {{#if logo_image}}
+                <img src="{{logo_image}}" alt="Logo" class="logo">
+                {{/if}}
+                <div class="badge-row">
+                    <span class="badge badge-purple">Professional</span>
+                    <span class="badge badge-pink">Certified</span>
+                </div>
+                <h1 class="title">Certificate</h1>
+                <p class="subtitle">of Completion</p>
+                <div class="divider"></div>
+            </div>
+
+            <div class="body">
+                <p class="presented-to">This is to certify that</p>
+                <h2 class="recipient">{{student_name}}</h2>
+                <p class="description">
+                    has successfully completed the program requirements and demonstrated
+                    proficiency in all assessed competencies for
+                </p>
+                <div class="course-wrapper">
+                    <span class="course">{{course_name}}</span>
+                </div>
+            </div>
+
+            <div class="footer">
+                <div class="footer-item">
+                    <div class="footer-line"></div>
+                    <p class="value">{{issue_date}}</p>
+                    <p class="label">Date Issued</p>
+                </div>
+
+                <div class="footer-item">
+                    {{#if signature_image}}
+                    <img src="{{signature_image}}" alt="Signature" class="signature-img">
+                    {{/if}}
+                    <div class="footer-line"></div>
+                    <p class="value">{{signature_name}}</p>
+                    <p class="label">{{issuing_authority}}</p>
+                </div>
+
+                <div class="footer-item">
+                    <div class="footer-line"></div>
+                    <p class="value">Verified</p>
+                    <span class="cert-id">{{certificate_id}}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

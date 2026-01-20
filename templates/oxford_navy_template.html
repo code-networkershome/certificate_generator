@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Oxford Navy Certificate</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 297mm;
+            height: 210mm;
+            font-family: 'Times New Roman', 'Georgia', serif;
+            background: #fdfcf7;
+            color: #1a1a2e;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .certificate {
+            width: 297mm;
+            height: 210mm;
+            padding: 8mm;
+            position: relative;
+            background: linear-gradient(135deg, #fdfcf7 0%, #f5f3e8 50%, #fdfcf7 100%);
+        }
+
+        /* Outer thick border */
+        .border-outer {
+            width: 100%;
+            height: 100%;
+            border: 6px solid #002147;
+            position: relative;
+            padding: 3mm;
+        }
+
+        /* Decorative line border */
+        .border-deco {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #8b7355;
+            position: relative;
+            padding: 3mm;
+        }
+
+        /* Inner border */
+        .border-inner {
+            width: 100%;
+            height: 100%;
+            border: 3px double #002147;
+            padding: 10mm 15mm;
+            position: relative;
+            background: rgba(253, 252, 247, 0.9);
+        }
+
+        /* Corner flourishes */
+        .flourish {
+            position: absolute;
+            width: 30mm;
+            height: 30mm;
+            font-size: 24pt;
+            color: #8b7355;
+        }
+
+        .flourish-tl {
+            top: 5mm;
+            left: 5mm;
+        }
+
+        .flourish-tr {
+            top: 5mm;
+            right: 5mm;
+            transform: scaleX(-1);
+        }
+
+        .flourish-bl {
+            bottom: 5mm;
+            left: 5mm;
+            transform: scaleY(-1);
+        }
+
+        .flourish-br {
+            bottom: 5mm;
+            right: 5mm;
+            transform: scale(-1);
+        }
+
+        /* University crest */
+        .crest {
+            position: absolute;
+            top: 8mm;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            color: #002147;
+            font-size: 10pt;
+            font-weight: bold;
+        }
+
+        .crest-shield {
+            font-size: 28pt;
+            margin-bottom: 2mm;
+        }
+
+        /* Wax seal */
+        .wax-seal {
+            position: absolute;
+            bottom: 20mm;
+            right: 20mm;
+            width: 32mm;
+            height: 32mm;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 40%, #c9302c 0%, #8b0000 60%, #5c0000 100%);
+            border: 2px solid #4a0000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #ffd700;
+            font-size: 8pt;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 2px 3px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 8mm;
+            margin-top: 15mm;
+        }
+
+        .logo {
+            max-height: 18mm;
+            max-width: 50mm;
+            margin-bottom: 4mm;
+        }
+
+        .institution {
+            font-size: 16pt;
+            color: #002147;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            margin-bottom: 4mm;
+            font-weight: bold;
+        }
+
+        .title {
+            font-size: 34pt;
+            font-weight: normal;
+            color: #1a1a2e;
+            font-style: italic;
+            margin-bottom: 2mm;
+            max-width: 250mm;
+            margin-left: auto;
+            margin-right: auto;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 11pt;
+            color: #666666;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        /* Body content */
+        .content {
+            text-align: center;
+            padding: 6mm 0;
+        }
+
+        .latin-text {
+            font-size: 10pt;
+            color: #8b7355;
+            font-style: italic;
+            margin-bottom: 4mm;
+        }
+
+        .presented-to {
+            font-size: 12pt;
+            color: #444444;
+            margin-bottom: 4mm;
+        }
+
+        .recipient-name {
+            font-size: 34pt;
+            font-weight: bold;
+            color: #002147;
+            font-family: 'Times New Roman', serif;
+            margin-bottom: 5mm;
+            padding-bottom: 3mm;
+            border-bottom: 1px solid #8b7355;
+            display: inline-block;
+            min-width: 140mm;
+        }
+
+        .description {
+            font-size: 12pt;
+            color: #444444;
+            line-height: 1.7;
+            margin: 3mm auto;
+            max-width: 220mm;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .course-name {
+            font-size: 18pt;
+            font-weight: bold;
+            color: #002147;
+            margin: 4mm 0;
+        }
+
+        /* Footer */
+        .footer {
+            position: absolute;
+            bottom: 12mm;
+            left: 15mm;
+            right: 55mm;
+        }
+
+        .footer-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .footer-table td {
+            width: 33.33%;
+            text-align: center;
+            vertical-align: bottom;
+            padding: 0 8mm;
+        }
+
+        .signature-img {
+            max-height: 12mm;
+            max-width: 35mm;
+            margin-bottom: 2mm;
+        }
+
+        .signature-line {
+            border-top: 1px solid #002147;
+            padding-top: 3mm;
+            margin-top: 3mm;
+        }
+
+        .signature-name {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #1a1a2e;
+        }
+
+        .signature-title {
+            font-size: 9pt;
+            color: #555555;
+            font-style: italic;
+        }
+
+        .certificate-id {
+            font-family: 'Courier New', monospace;
+            font-size: 8pt;
+            color: #888888;
+            margin-top: 2mm;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="certificate">
+        <div class="border-outer">
+            <div class="flourish flourish-tl">❧</div>
+            <div class="flourish flourish-tr">❧</div>
+            <div class="flourish flourish-bl">❧</div>
+            <div class="flourish flourish-br">❧</div>
+
+            <div class="border-deco">
+                <div class="border-inner">
+                    <div class="crest">
+                        <div class="crest-shield">🛡️</div>
+                    </div>
+
+                    <div class="wax-seal">
+                        AUTHENTIC<br>SEAL
+                    </div>
+
+                    <!-- Header -->
+                    <div class="header">
+                        {% if logo_image %}
+                        <img src="{{ logo_image }}" alt="Logo" class="logo"><br>
+                        {% endif %}
+                        <div class="institution">{{ issuing_authority }}</div>
+                        <div class="title">{{ certificate_title | default('Diploma of Distinction') }}</div>
+                        <div class="subtitle">{{ certificate_subtitle | default('Excellence in Education') }}</div>
+                    </div>
+
+                    <!-- Body -->
+                    <div class="content">
+                        <p class="latin-text">Omnibus ad quos praesentes litterae pervenerint, salutem</p>
+                        <p class="presented-to">Be it known that</p>
+                        <div class="recipient-name">{{ student_name }}</div>
+                        <p class="description">{{ description_text | default('having fulfilled all the requirements
+                            prescribed by the Board of Studies, is hereby awarded this diploma in recognition of
+                            successful completion of') }}</p>
+                        <div class="course-name">{{ course_name }}</div>
+                        {% if custom_body %}
+                        <p class="description">{{ custom_body }}</p>
+                        {% else %}
+                        <p class="description">Given under our hand and the seal of the institution.</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="footer">
+                        <table class="footer-table">
+                            <tr>
+                                <td>
+                                    <div class="signature-line">
+                                        <div class="signature-name">{{ issue_date }}</div>
+                                        <div class="signature-title">Date of Award</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if signature_image %}
+                                    <img src="{{ signature_image }}" alt="Signature" class="signature-img"><br>
+                                    {% endif %}
+                                    <div class="signature-line">
+                                        <div class="signature-name">{{ signature_name }}</div>
+                                        <div class="signature-title">Vice-Chancellor</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="signature-line">
+                                        <div class="signature-name">Registrar</div>
+                                        <div class="certificate-id">Ref: {{ certificate_id }}</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

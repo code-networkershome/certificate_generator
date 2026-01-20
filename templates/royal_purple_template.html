@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Royal Purple Certificate</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 297mm;
+            height: 210mm;
+            font-family: 'Garamond', serif;
+            background: #fff;
+            color: #2d1b4d;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .container {
+            width: 297mm;
+            height: 210mm;
+            padding: 12mm;
+            background: linear-gradient(to right, #f3e8ff, #fff, #f3e8ff);
+            position: relative;
+        }
+
+        .main-border {
+            width: 100%;
+            height: 100%;
+            border: 4mm double #6b21a8;
+            padding: 10mm;
+            position: relative;
+        }
+
+        .corner-ornament {
+            position: absolute;
+            width: 40mm;
+            height: 40mm;
+            color: #6b21a8;
+            font-size: 60pt;
+            line-height: 1;
+        }
+
+        .tl {
+            top: -10mm;
+            left: -10mm;
+            transform: rotate(0deg);
+        }
+
+        .tr {
+            top: -10mm;
+            right: -10mm;
+            transform: rotate(90deg);
+        }
+
+        .bl {
+            bottom: -10mm;
+            left: -10mm;
+            transform: rotate(-90deg);
+        }
+
+        .br {
+            bottom: -10mm;
+            right: -10mm;
+            transform: rotate(180deg);
+        }
+
+        .content {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            text-align: center;
+        }
+
+        .header {
+            margin-bottom: 15mm;
+        }
+
+        .title {
+            font-size: 38pt;
+            font-weight: bold;
+            color: #4c1d95;
+            text-transform: uppercase;
+            max-width: 250mm;
+            margin: 0 auto 5mm auto;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 14pt;
+            color: #7e22ce;
+            letter-spacing: 5px;
+            margin-top: 2mm;
+        }
+
+        .body {
+            padding-top: 5mm;
+        }
+
+        .recipient {
+            font-size: 40pt;
+            font-weight: bold;
+            color: #2d1b4d;
+            margin: 10mm 0;
+            font-style: italic;
+        }
+
+        .description {
+            font-size: 13pt;
+            color: #4c1d95;
+            line-height: 1.7;
+            max-width: 220mm;
+            margin-left: auto;
+            margin-right: auto;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .course-name {
+            font-size: 22pt;
+            font-weight: bold;
+            color: #6b21a8;
+            margin: 4mm 0;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 10mm;
+            left: 10mm;
+            right: 10mm;
+        }
+
+        .footer-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .footer-table td {
+            width: 33.33%;
+            text-align: center;
+            vertical-align: bottom;
+            padding: 0 5mm;
+        }
+
+        .footer-item {
+            text-align: center;
+        }
+
+        .sig-line {
+            border-top: 1px solid #7e22ce;
+            width: 100%;
+            margin: 2mm auto;
+        }
+
+        .label {
+            font-size: 10pt;
+            color: #a855f7;
+            text-transform: uppercase;
+        }
+
+        .value {
+            font-size: 11pt;
+            font-weight: 600;
+            color: #4c1d95;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="main-border">
+            <div class="corner-ornament tl">❦</div>
+            <div class="corner-ornament tr">❦</div>
+            <div class="corner-ornament bl">❦</div>
+            <div class="corner-ornament br">❦</div>
+            <div class="content">
+                <div class="header">
+                    {% if logo_url %}
+                    <img src="{{logo_url}}" alt="Logo" style="max-height: 20mm; margin-bottom: 4mm;">
+                    {% endif %}
+                    <h1 class="title">{{certificate_title or "Recognition of Excellence"}}</h1>
+                    <p class="subtitle">{{certificate_subtitle or "PRESTIGIOUS ACHIEVEMENT AWARD"}}</p>
+                </div>
+                <div class="body">
+                    <p style="font-size: 14pt;">This high honor is bestowed upon</p>
+                    <h2 class="recipient">{{student_name}}</h2>
+                    <p class="description">
+                        {{description_text or "In recognition of outstanding performance, academic brilliance, and
+                        dedicated effort in mastering"}}
+                    </p>
+                    <p class="course-name">{{course_name}}</p>
+                </div>
+                <div class="footer">
+                    <table class="footer-table">
+                        <tr>
+                            <td>
+                                <div class="footer-item">
+                                    <p class="value">{{issue_date}}</p>
+                                    <div class="sig-line"></div>
+                                    <p class="label">Date of Award</p>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="footer-item">
+                                    <p class="value">{{certificate_id}}</p>
+                                    <div class="sig-line"></div>
+                                    <p class="label">Registry Number</p>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="footer-item">
+                                    {% if signature_image_url %}
+                                    <img src="{{signature_image_url}}" alt="Signature"
+                                        style="max-height: 15mm; margin-bottom: 2mm;">
+                                    {% endif %}
+                                    <div class="sig-line"></div>
+                                    <p class="value">{{signature_name}}</p>
+                                    <p class="label">{{issuing_authority}}</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

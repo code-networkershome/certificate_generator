@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>AWS Cloud Certificate</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 297mm;
+            height: 210mm;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            background: #0f1419;
+            color: #ffffff;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .certificate {
+            width: 297mm;
+            height: 210mm;
+            padding: 12mm;
+            position: relative;
+            background: linear-gradient(135deg, #0f1419 0%, #1a252f 50%, #0f1419 100%);
+        }
+
+        .border-frame {
+            width: 100%;
+            height: 100%;
+            border: 3px solid #ff9900;
+            padding: 8mm;
+            position: relative;
+            background: rgba(255, 153, 0, 0.03);
+        }
+
+        .inner-content {
+            width: 100%;
+            height: 100%;
+            padding: 8mm 12mm;
+            position: relative;
+        }
+
+        /* Cloud decoration */
+        .cloud-icon {
+            position: absolute;
+            top: 8mm;
+            right: 12mm;
+            font-size: 28pt;
+            opacity: 0.3;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 8mm;
+        }
+
+        .logo {
+            max-height: 18mm;
+            max-width: 50mm;
+            margin-bottom: 5mm;
+        }
+
+        .title {
+            font-size: 34pt;
+            font-weight: bold;
+            color: #ff9900;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            margin-bottom: 2mm;
+            max-width: 250mm;
+            margin-left: auto;
+            margin-right: auto;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 14pt;
+            color: #8899a6;
+            letter-spacing: 3px;
+        }
+
+        /* Body content */
+        .content {
+            text-align: center;
+            padding: 8mm 0;
+        }
+
+        .presented-to {
+            font-size: 13pt;
+            color: #8899a6;
+            margin-bottom: 5mm;
+        }
+
+        .recipient-name {
+            font-size: 32pt;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 6mm;
+            padding-bottom: 4mm;
+            border-bottom: 2px solid #ff9900;
+            display: inline-block;
+            min-width: 140mm;
+        }
+
+        .description {
+            font-size: 13pt;
+            color: #8899a6;
+            line-height: 1.6;
+            margin: 4mm auto;
+            max-width: 220mm;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .course-name {
+            font-size: 20pt;
+            font-weight: bold;
+            color: #ff9900;
+            margin: 5mm 0;
+        }
+
+        /* Footer */
+        .footer {
+            position: absolute;
+            bottom: 12mm;
+            left: 12mm;
+            right: 12mm;
+        }
+
+        .footer-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .footer-table td {
+            width: 33.33%;
+            text-align: center;
+            vertical-align: bottom;
+            padding: 0 10mm;
+        }
+
+        .signature-img {
+            max-height: 12mm;
+            max-width: 35mm;
+            margin-bottom: 2mm;
+        }
+
+        .signature-line {
+            border-top: 1px solid #ff9900;
+            padding-top: 3mm;
+            margin-top: 3mm;
+        }
+
+        .signature-name {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .signature-title {
+            font-size: 9pt;
+            color: #8899a6;
+        }
+
+        .certificate-id {
+            font-family: 'Courier New', monospace;
+            font-size: 8pt;
+            color: #657786;
+            margin-top: 2mm;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="certificate">
+        <div class="border-frame">
+            <div class="cloud-icon">☁️</div>
+
+            <div class="inner-content">
+                <!-- Header -->
+                <div class="header">
+                    {% if logo_image %}
+                    <img src="{{ logo_image }}" alt="Logo" class="logo"><br>
+                    {% endif %}
+                    <div class="title">{{ certificate_title | default('Certificate of Cloud Excellence') }}</div>
+                    <div class="subtitle">{{ certificate_subtitle | default(issuing_authority) }}</div>
+                </div>
+
+                <!-- Body -->
+                <div class="content">
+                    <p class="presented-to">This is to certify that</p>
+                    <div class="recipient-name">{{ student_name }}</div>
+                    <p class="description">{{ description_text | default('has successfully completed the cloud training
+                        program') }}</p>
+                    <div class="course-name">{{ course_name }}</div>
+                    {% if custom_body %}
+                    <p class="description">{{ custom_body }}</p>
+                    {% else %}
+                    <p class="description">and has demonstrated proficiency in cloud computing technologies.</p>
+                    {% endif %}
+                </div>
+
+                <!-- Footer -->
+                <div class="footer">
+                    <table class="footer-table">
+                        <tr>
+                            <td>
+                                <div class="signature-line">
+                                    <div class="signature-name">{{ issue_date }}</div>
+                                    <div class="signature-title">Date of Issue</div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if signature_image %}
+                                <img src="{{ signature_image }}" alt="Signature" class="signature-img"><br>
+                                {% endif %}
+                                <div class="signature-line">
+                                    <div class="signature-name">{{ signature_name }}</div>
+                                    <div class="signature-title">Authorized Signatory</div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="signature-line">
+                                    <div class="signature-name">{{ issuing_authority }}</div>
+                                    <div class="certificate-id">ID: {{ certificate_id }}</div>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

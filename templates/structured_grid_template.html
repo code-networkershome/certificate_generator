@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Structured Grid Certificate</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 297mm;
+            height: 210mm;
+            font-family: 'Inter', sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .container {
+            width: 297mm;
+            height: 210mm;
+            padding: 12mm;
+            display: grid;
+            grid-template-columns: 80mm 1fr;
+            gap: 12mm;
+        }
+
+        .sidebar {
+            background: #1e293b;
+            color: #fff;
+            padding: 20mm 10mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 8px;
+        }
+
+        .main-panel {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20mm;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .logo {
+            max-width: 50mm;
+            margin-bottom: 10mm;
+            filter: brightness(0) invert(1);
+        }
+
+        .title {
+            font-size: 36pt;
+            font-weight: 800;
+            text-transform: uppercase;
+            line-height: 1.1;
+            margin-bottom: 5mm;
+            max-width: 250mm;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .subtitle {
+            font-size: 12pt;
+            color: #64748b;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .recipient {
+            font-size: 38pt;
+            font-weight: 800;
+            color: #1e293b;
+            margin: 10mm 0;
+            border-bottom: 4px solid #1e293b;
+            display: inline-block;
+        }
+
+        .description {
+            font-size: 13pt;
+            color: #475569;
+            line-height: 1.7;
+            max-width: 100%;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .course-name {
+            font-size: 22pt;
+            font-weight: bold;
+            color: #0f172a;
+            margin: 5mm 0;
+        }
+
+        .cert-id {
+            font-family: 'Courier New', monospace;
+            font-size: 10pt;
+            opacity: 0.5;
+        }
+
+        .footer-sidebar {
+            text-align: center;
+        }
+
+        .footer-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: 15mm;
+        }
+
+        .label {
+            font-size: 9pt;
+            color: #94a3b8;
+            text-transform: uppercase;
+            display: block;
+        }
+
+        .value {
+            font-size: 12pt;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-top">
+                {% if logo_url %}
+                <img src="{{logo_url}}" alt="Logo" class="logo">
+                {% endif %}
+                <p style="font-size: 9pt; text-transform: uppercase; letter-spacing: 2px;">Verification Hash</p>
+                <p class="cert-id">{{certificate_id}}</p>
+            </div>
+            <div class="footer-sidebar">
+                <p class="value">{{issue_date}}</p>
+                <p class="label">Issued Date</p>
+            </div>
+        </aside>
+        <main class="main-panel">
+            <h1 class="title">{{certificate_title or "Achievement Certificate"}}</h1>
+            <p class="subtitle">{{certificate_subtitle or "COMPLETION OF PROFESSIONAL TRACK"}}</p>
+
+            <div class="body">
+                <p style="font-size: 12pt; color: #64748b; margin-top: 15mm;">Awarded to</p>
+                <h2 class="recipient">{{student_name}}</h2>
+                <p class="description">
+                    {{description_text or "For the successful demonstration of competencies and academic rigor in the
+                    completion of"}}
+                </p>
+                <p class="course-name">{{course_name}}</p>
+                {% if custom_body %}
+                <p class="description" style="margin-top: 5mm;">{{custom_body}}</p>
+                {% endif %}
+            </div>
+
+            <div class="footer-main">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td style="width: 50%; text-align: left; vertical-align: bottom;">
+                            <div class="footer-item">
+                                {% if signature_image_url %}
+                                <div style="margin-bottom: 2mm;">
+                                    <img src="{{signature_image_url}}" alt="Signature" style="max-height: 15mm;">
+                                </div>
+                                {% endif %}
+                                <p class="value">{{signature_name}}</p>
+                                <p class="label">{{issuing_authority}}</p>
+                            </div>
+                        </td>
+                        <td style="width: 50%; text-align: right; vertical-align: bottom;">
+                            <div class="footer-item">
+                                <p class="value">NH-CERTIFIED</p>
+                                <p class="label">Status</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </main>
+    </div>
+</body>
+
+</html>

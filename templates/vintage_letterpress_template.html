@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Vintage Letterpress Certificate</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 297mm;
+            height: 210mm;
+            font-family: 'Courier New', Courier, monospace;
+            background: #e2e2e2;
+            color: #333;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .container {
+            width: 297mm;
+            height: 210mm;
+            padding: 10mm;
+            background: #fdfaf6 url('https://www.transparenttextures.com/patterns/notebook.png');
+            position: relative;
+        }
+
+        .main-frame {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #999;
+            padding: 5mm;
+        }
+
+        .inner-frame {
+            width: 100%;
+            height: 100%;
+            border: 3px double #333;
+            padding: 15mm;
+            position: relative;
+            text-align: center;
+        }
+
+        .header {
+            margin-bottom: 8mm;
+        }
+
+        .title {
+            font-size: 32pt;
+            font-weight: bold;
+            font-family: 'Times New Roman', serif;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 3mm;
+            margin-bottom: 5mm;
+            max-width: 250mm;
+            margin-left: auto;
+            margin-right: auto;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .body {
+            padding: 5mm 0;
+        }
+
+        .recipient {
+            font-size: 42pt;
+            font-family: 'Georgia', serif;
+            color: #111;
+            margin: 8mm 0;
+            font-style: italic;
+        }
+
+        .description {
+            font-size: 13pt;
+            line-height: 1.6;
+            color: #444;
+            max-width: 220mm;
+            margin-left: auto;
+            margin-right: auto;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .course-name {
+            font-size: 22pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin: 5mm 0;
+            border: 1px solid #333;
+            padding: 2mm 5mm;
+            display: inline-block;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 15mm;
+            left: 15mm;
+            right: 15mm;
+        }
+
+        .footer-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .footer-table td {
+            width: 33.33%;
+            text-align: center;
+            vertical-align: bottom;
+            padding: 0 5mm;
+        }
+
+        .footer-item {
+            text-align: center;
+        }
+
+        .line {
+            border-top: 1px solid #333;
+            margin-top: 2mm;
+            width: 100%;
+        }
+
+        .label {
+            font-size: 9pt;
+            text-transform: uppercase;
+            color: #666;
+            margin-top: 1mm;
+        }
+
+        .value {
+            font-size: 11pt;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="main-frame">
+            <div class="inner-frame">
+                <div class="header">
+                    <h1 class="title">{{certificate_title or "Official Certification"}}</h1>
+                </div>
+                <div class="body">
+                    <p style="font-size: 14pt; margin-bottom: 5mm;">THIS DOCUMENT ESTABLISHES THAT</p>
+                    <h2 class="recipient">{{student_name}}</h2>
+                    <p class="description">
+                        {{description_text or "has successfully satisfied all established requirements and demonstrated
+                        professional proficiency in the official curriculum of"}}
+                    </p>
+                    <p class="course-name">{{course_name}}</p>
+                </div>
+                <div class="footer">
+                    <table class="footer-table">
+                        <tr>
+                            <td>
+                                <div class="footer-item">
+                                    <p class="value">{{issue_date}}</p>
+                                    <div class="line"></div>
+                                    <p class="label">Date Issued</p>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="footer-item">
+                                    {% if signature_image_url %}
+                                    <img src="{{signature_image_url}}" alt="Signature"
+                                        style="max-height: 12mm; margin-bottom: 2mm; filter: contrast(150%) grayscale(100%);">
+                                    {% endif %}
+                                    <div class="line"></div>
+                                    <p class="value">{{signature_name}}</p>
+                                    <p class="label">{{issuing_authority}}</p>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="footer-item">
+                                    <p class="value">{{certificate_id}}</p>
+                                    <div class="line"></div>
+                                    <p class="label">Verification ID</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Networking Certificate</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 297mm;
+            height: 210mm;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            background: #ffffff;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .certificate {
+            width: 297mm;
+            height: 210mm;
+            padding: 10mm;
+            position: relative;
+            background:
+                linear-gradient(135deg, #1e40af 0%, #3b82f6 25%, #1e40af 50%, #3b82f6 75%, #1e40af 100%);
+        }
+
+        .inner {
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            border-radius: 4px;
+            padding: 15mm 20mm;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Network Grid Pattern */
+        .grid-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+            background-size: 20mm 20mm;
+            pointer-events: none;
+        }
+
+        /* Network Nodes Decoration */
+        .node {
+            position: absolute;
+            width: 8mm;
+            height: 8mm;
+            border: 2px solid rgba(59, 130, 246, 0.15);
+            border-radius: 50%;
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .node-1 {
+            top: 15mm;
+            left: 25mm;
+        }
+
+        .node-2 {
+            top: 30mm;
+            right: 40mm;
+        }
+
+        .node-3 {
+            bottom: 25mm;
+            left: 35mm;
+        }
+
+        .node-4 {
+            bottom: 40mm;
+            right: 30mm;
+        }
+
+        .header {
+            text-align: center;
+            z-index: 1;
+            margin-bottom: 8mm;
+        }
+
+        .logo {
+            max-height: 22mm;
+            margin-bottom: 6mm;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3mm;
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            color: white;
+            padding: 2mm 6mm;
+            border-radius: 20px;
+            font-size: 9pt;
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-bottom: 5mm;
+        }
+
+        .badge svg {
+            width: 5mm;
+            height: 5mm;
+        }
+
+        .title {
+            font-size: 38pt;
+            font-weight: 700;
+            color: #1e293b;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            margin-bottom: 2mm;
+            max-width: 250mm;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 13pt;
+            color: #3b82f6;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        .body {
+            text-align: center;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            z-index: 1;
+        }
+
+        .presented-to {
+            font-size: 11pt;
+            color: #64748b;
+            margin-bottom: 4mm;
+        }
+
+        .recipient {
+            font-size: 30pt;
+            font-weight: 700;
+            color: #1e40af;
+            margin-bottom: 6mm;
+            padding-bottom: 4mm;
+            border-bottom: 3px solid #3b82f6;
+            display: inline-block;
+        }
+
+        .description {
+            font-size: 12pt;
+            color: #475569;
+            line-height: 1.7;
+            max-width: 220mm;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .course {
+            font-size: 16pt;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 4mm 0;
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
+            padding: 3mm 8mm;
+            border-radius: 4px;
+            border-left: 4px solid #3b82f6;
+            display: inline-block;
+        }
+
+        .footer {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            z-index: 1;
+            margin-top: 8mm;
+        }
+
+        .footer-item {
+            text-align: center;
+            min-width: 60mm;
+        }
+
+        .signature-img {
+            max-height: 14mm;
+            margin-bottom: 2mm;
+        }
+
+        .divider {
+            width: 50mm;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+            margin: 0 auto 3mm;
+        }
+
+        .value {
+            font-size: 11pt;
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        .label {
+            font-size: 9pt;
+            color: #64748b;
+            margin-top: 1mm;
+        }
+
+        .cert-id {
+            font-family: 'Consolas', monospace;
+            font-size: 8pt;
+            color: #94a3b8;
+            background: #f1f5f9;
+            padding: 1mm 3mm;
+            border-radius: 2px;
+            margin-top: 2mm;
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="certificate">
+        <div class="inner">
+            <div class="grid-pattern"></div>
+            <div class="node node-1"></div>
+            <div class="node node-2"></div>
+            <div class="node node-3"></div>
+            <div class="node node-4"></div>
+
+            <div class="header">
+                {{#if logo_image}}
+                <img src="{{logo_image}}" alt="Logo" class="logo">
+                {{/if}}
+                <div class="badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                            d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
+                    </svg>
+                    Network Professional
+                </div>
+                <h1 class="title">Certificate</h1>
+                <p class="subtitle">of Professional Achievement</p>
+            </div>
+
+            <div class="body">
+                <p class="presented-to">This certifies that</p>
+                <h2 class="recipient">{{student_name}}</h2>
+                <p class="description">
+                    has successfully demonstrated expertise in network infrastructure,
+                    protocols, and security by completing the certification program for
+                </p>
+                <p class="course">{{course_name}}</p>
+            </div>
+
+            <div class="footer">
+                <div class="footer-item">
+                    <div class="divider"></div>
+                    <p class="value">{{issue_date}}</p>
+                    <p class="label">Issue Date</p>
+                </div>
+
+                <div class="footer-item">
+                    {{#if signature_image}}
+                    <img src="{{signature_image}}" alt="Signature" class="signature-img">
+                    {{/if}}
+                    <div class="divider"></div>
+                    <p class="value">{{signature_name}}</p>
+                    <p class="label">{{issuing_authority}}</p>
+                </div>
+
+                <div class="footer-item">
+                    <div class="divider"></div>
+                    <p class="value">Verified</p>
+                    <span class="cert-id">{{certificate_id}}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

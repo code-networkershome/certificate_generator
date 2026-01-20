@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Minimalist Black Certificate</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 297mm;
+            height: 210mm;
+            font-family: 'Helvetica', sans-serif;
+            background: #fff;
+            color: #000;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .container {
+            width: 297mm;
+            height: 210mm;
+            padding: 30mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .header {
+            border-left: 10px solid #000;
+            padding-left: 10mm;
+        }
+
+        .title {
+            font-size: 38pt;
+            font-weight: 900;
+            letter-spacing: -2px;
+            max-width: 250mm;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .subtitle {
+            font-size: 11pt;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            margin-top: 2mm;
+        }
+
+        .body {
+            margin: 15mm 0;
+        }
+
+        .recipient {
+            font-size: 52pt;
+            font-weight: 900;
+            color: #000;
+            margin: 5mm 0;
+            letter-spacing: -3px;
+        }
+
+        .description {
+            font-size: 14pt;
+            color: #333;
+            line-height: 1.5;
+            font-weight: 300;
+            max-width: 220mm;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .course-name {
+            font-size: 20pt;
+            font-weight: bold;
+            color: #000;
+            margin-top: 4mm;
+        }
+
+        .footer {
+            width: 100%;
+            margin-top: 15mm;
+        }
+
+        .footer table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .footer td {
+            vertical-align: bottom;
+            text-align: left;
+            padding-right: 15mm;
+        }
+
+        .label {
+            font-size: 8pt;
+            color: #888;
+            text-transform: uppercase;
+            margin-top: 2mm;
+        }
+
+        .value {
+            font-size: 11pt;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">{{certificate_title or "CERTIFICATION"}}</h1>
+            <p class="subtitle">{{certificate_subtitle or "OFFICIAL RECORD"}}</p>
+        </div>
+        <div class="body">
+            <p style="font-size: 11pt; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-top: 10mm;">
+                Assigned to</p>
+            <h2 class="recipient">{{student_name}}</h2>
+            <p class="description">
+                {{description_text or "for satisfying all professional criteria and completing the course of"}}
+            </p>
+            <p class="course-name">{{course_name}}</p>
+        </div>
+        <div class="footer">
+            <table>
+                <tr>
+                    <td>
+                        <div class="footer-item">
+                            <p class="value">{{issue_date}}</p>
+                            <div style="height: 2px; width: 30mm; background: #000; margin-top: 1mm;"></div>
+                            <p class="label">Date</p>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="footer-item">
+                            <p class="value">{{signature_name}}</p>
+                            <div style="height: 2px; width: 50mm; background: #000; margin-top: 1mm;"></div>
+                            <p class="label">{{issuing_authority}}</p>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="footer-item">
+                            <p class="value">{{certificate_id}}</p>
+                            <div style="height: 2px; width: 30mm; background: #000; margin-top: 1mm;"></div>
+                            <p class="label">Ref</p>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</body>
+
+</html>

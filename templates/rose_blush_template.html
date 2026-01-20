@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Rose Blush Certificate</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 297mm;
+            height: 210mm;
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: #fff5f5;
+            color: #4a3333;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .certificate {
+            width: 297mm;
+            height: 210mm;
+            padding: 12mm;
+            position: relative;
+            background: linear-gradient(135deg, #fff5f5 0%, #ffe4e6 30%, #fff1f2 70%, #fff5f5 100%);
+        }
+
+        .border-frame {
+            width: 100%;
+            height: 100%;
+            border: 2px solid #e11d48;
+            padding: 6mm;
+            position: relative;
+        }
+
+        .inner-frame {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #fb7185;
+            padding: 10mm 15mm;
+            position: relative;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Decorative corners */
+        .corner {
+            position: absolute;
+            width: 18mm;
+            height: 18mm;
+        }
+
+        .corner-tl {
+            top: 4mm;
+            left: 4mm;
+            border-top: 3px solid #e11d48;
+            border-left: 3px solid #e11d48;
+        }
+
+        .corner-tr {
+            top: 4mm;
+            right: 4mm;
+            border-top: 3px solid #e11d48;
+            border-right: 3px solid #e11d48;
+        }
+
+        .corner-bl {
+            bottom: 4mm;
+            left: 4mm;
+            border-bottom: 3px solid #e11d48;
+            border-left: 3px solid #e11d48;
+        }
+
+        .corner-br {
+            bottom: 4mm;
+            right: 4mm;
+            border-bottom: 3px solid #e11d48;
+            border-right: 3px solid #e11d48;
+        }
+
+        /* Decorative flower */
+        .flower {
+            position: absolute;
+            top: 6mm;
+            right: 10mm;
+            font-size: 24pt;
+            opacity: 0.4;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 8mm;
+        }
+
+        .logo {
+            max-height: 18mm;
+            max-width: 50mm;
+            margin-bottom: 5mm;
+        }
+
+        .title {
+            font-size: 36pt;
+            font-weight: bold;
+            color: #be123c;
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            margin-bottom: 2mm;
+            max-width: 250mm;
+            margin-left: auto;
+            margin-right: auto;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 14pt;
+            color: #9f1239;
+            letter-spacing: 3px;
+            font-style: italic;
+        }
+
+        /* Body content */
+        .content {
+            text-align: center;
+            padding: 8mm 0;
+        }
+
+        .presented-to {
+            font-size: 13pt;
+            color: #881337;
+            margin-bottom: 5mm;
+            font-style: italic;
+        }
+
+        .recipient-name {
+            font-size: 34pt;
+            font-weight: bold;
+            color: #4a3333;
+            font-style: italic;
+            margin-bottom: 6mm;
+            padding-bottom: 4mm;
+            border-bottom: 2px solid #e11d48;
+            display: inline-block;
+            min-width: 140mm;
+        }
+
+        .description {
+            font-size: 13pt;
+            color: #6b4444;
+            line-height: 1.6;
+            margin: 4mm auto;
+            max-width: 220mm;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .course-name {
+            font-size: 20pt;
+            font-weight: bold;
+            color: #be123c;
+            margin: 5mm 0;
+        }
+
+        /* Footer */
+        .footer {
+            position: absolute;
+            bottom: 12mm;
+            left: 15mm;
+            right: 15mm;
+        }
+
+        .footer-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .footer-table td {
+            width: 33.33%;
+            text-align: center;
+            vertical-align: bottom;
+            padding: 0 10mm;
+        }
+
+        .signature-img {
+            max-height: 12mm;
+            max-width: 35mm;
+            margin-bottom: 2mm;
+        }
+
+        .signature-line {
+            border-top: 1px solid #e11d48;
+            padding-top: 3mm;
+            margin-top: 3mm;
+        }
+
+        .signature-name {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #4a3333;
+        }
+
+        .signature-title {
+            font-size: 9pt;
+            color: #9f1239;
+            font-style: italic;
+        }
+
+        .certificate-id {
+            font-family: 'Courier New', monospace;
+            font-size: 8pt;
+            color: #be123c;
+            margin-top: 2mm;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="certificate">
+        <div class="border-frame">
+            <div class="corner corner-tl"></div>
+            <div class="corner corner-tr"></div>
+            <div class="corner corner-bl"></div>
+            <div class="corner corner-br"></div>
+            <div class="flower">🌸</div>
+
+            <div class="inner-frame">
+                <!-- Header -->
+                <div class="header">
+                    {% if logo_image %}
+                    <img src="{{ logo_image }}" alt="Logo" class="logo"><br>
+                    {% endif %}
+                    <div class="title">{{ certificate_title | default('Certificate of Excellence') }}</div>
+                    <div class="subtitle">{{ certificate_subtitle | default(issuing_authority) }}</div>
+                </div>
+
+                <!-- Body -->
+                <div class="content">
+                    <p class="presented-to">This certificate is proudly presented to</p>
+                    <div class="recipient-name">{{ student_name }}</div>
+                    <p class="description">{{ description_text | default('for the successful completion of') }}</p>
+                    <div class="course-name">{{ course_name }}</div>
+                    {% if custom_body %}
+                    <p class="description">{{ custom_body }}</p>
+                    {% else %}
+                    <p class="description">with outstanding dedication and achievement.</p>
+                    {% endif %}
+                </div>
+
+                <!-- Footer -->
+                <div class="footer">
+                    <table class="footer-table">
+                        <tr>
+                            <td>
+                                <div class="signature-line">
+                                    <div class="signature-name">{{ issue_date }}</div>
+                                    <div class="signature-title">Date of Issue</div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if signature_image %}
+                                <img src="{{ signature_image }}" alt="Signature" class="signature-img"><br>
+                                {% endif %}
+                                <div class="signature-line">
+                                    <div class="signature-name">{{ signature_name }}</div>
+                                    <div class="signature-title">Authorized Signatory</div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="signature-line">
+                                    <div class="signature-name">{{ issuing_authority }}</div>
+                                    <div class="certificate-id">ID: {{ certificate_id }}</div>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

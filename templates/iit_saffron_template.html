@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>IIT Saffron Certificate</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 297mm;
+            height: 210mm;
+            font-family: 'Times New Roman', 'Georgia', serif;
+            background: #fffef5;
+            color: #2d2d2d;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .certificate {
+            width: 297mm;
+            height: 210mm;
+            padding: 8mm;
+            position: relative;
+            background: linear-gradient(180deg, #fffef5 0%, #fff8e7 50%, #fffef5 100%);
+        }
+
+        /* Outer saffron border */
+        .border-outer {
+            width: 100%;
+            height: 100%;
+            border: 5px solid #ff6600;
+            position: relative;
+            padding: 2mm;
+        }
+
+        /* Navy inner border */
+        .border-navy {
+            width: 100%;
+            height: 100%;
+            border: 3px solid #00008b;
+            position: relative;
+            padding: 2mm;
+        }
+
+        /* Green accent border */
+        .border-green {
+            width: 100%;
+            height: 100%;
+            border: 2px solid #138808;
+            position: relative;
+            padding: 8mm 12mm;
+            background: rgba(255, 254, 245, 0.95);
+        }
+
+        /* Corner chakra decorations */
+        .chakra {
+            position: absolute;
+            width: 18mm;
+            height: 18mm;
+            border: 2px solid #00008b;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 10pt;
+            color: #00008b;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .chakra-tl {
+            top: 5mm;
+            left: 5mm;
+        }
+
+        .chakra-tr {
+            top: 5mm;
+            right: 5mm;
+        }
+
+        .chakra-bl {
+            bottom: 5mm;
+            left: 5mm;
+        }
+
+        .chakra-br {
+            bottom: 5mm;
+            right: 5mm;
+        }
+
+        /* Emblem */
+        .emblem {
+            position: absolute;
+            top: 6mm;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            color: #00008b;
+            font-size: 9pt;
+            font-weight: bold;
+        }
+
+        .emblem-icon {
+            font-size: 22pt;
+            color: #ff6600;
+            margin-bottom: 1mm;
+        }
+
+        /* Official embossed seal */
+        .emboss-seal {
+            position: absolute;
+            bottom: 18mm;
+            right: 18mm;
+            width: 35mm;
+            height: 35mm;
+            border: 3px solid #c0902d;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ffd700 0%, #daa520 50%, #b8860b 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #4a3800;
+            font-size: 7pt;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.5), 2px 3px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .emboss-seal::before {
+            content: '';
+            position: absolute;
+            width: 30mm;
+            height: 30mm;
+            border: 1px dashed #4a3800;
+            border-radius: 50%;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 6mm;
+            margin-top: 12mm;
+        }
+
+        .logo {
+            max-height: 18mm;
+            max-width: 50mm;
+            margin-bottom: 4mm;
+        }
+
+        .institution {
+            font-size: 15pt;
+            color: #00008b;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            margin-bottom: 2mm;
+            font-weight: bold;
+        }
+
+        .institution-sub {
+            font-size: 10pt;
+            color: #555555;
+            letter-spacing: 2px;
+            margin-bottom: 4mm;
+        }
+
+        .title {
+            font-size: 32pt;
+            font-weight: bold;
+            color: #2d2d2d;
+            margin-bottom: 2mm;
+            max-width: 250mm;
+            margin-left: auto;
+            margin-right: auto;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 11pt;
+            color: #666666;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        /* Body content */
+        .content {
+            text-align: center;
+            padding: 5mm 0;
+        }
+
+        .presented-to {
+            font-size: 12pt;
+            color: #444444;
+            margin-bottom: 4mm;
+        }
+
+        .recipient-name {
+            font-size: 32pt;
+            font-weight: bold;
+            color: #00008b;
+            font-family: 'Times New Roman', serif;
+            margin-bottom: 5mm;
+            padding-bottom: 3mm;
+            border-bottom: 2px solid #ff6600;
+            display: inline-block;
+            min-width: 140mm;
+        }
+
+        .description {
+            font-size: 12pt;
+            color: #444444;
+            line-height: 1.6;
+            margin: 3mm auto;
+            max-width: 220mm;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .course-name {
+            font-size: 17pt;
+            font-weight: bold;
+            color: #138808;
+            margin: 4mm 0;
+        }
+
+        .grade-info {
+            font-size: 11pt;
+            color: #555555;
+            margin-top: 3mm;
+        }
+
+        /* Footer */
+        .footer {
+            position: absolute;
+            bottom: 12mm;
+            left: 12mm;
+            right: 55mm;
+        }
+
+        .footer-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .footer-table td {
+            width: 33.33%;
+            text-align: center;
+            vertical-align: bottom;
+            padding: 0 6mm;
+        }
+
+        .signature-img {
+            max-height: 12mm;
+            max-width: 35mm;
+            margin-bottom: 2mm;
+        }
+
+        .signature-line {
+            border-top: 1px solid #2d2d2d;
+            padding-top: 3mm;
+            margin-top: 3mm;
+        }
+
+        .signature-name {
+            font-size: 10pt;
+            font-weight: bold;
+            color: #2d2d2d;
+        }
+
+        .signature-title {
+            font-size: 8pt;
+            color: #555555;
+        }
+
+        .certificate-id {
+            font-family: 'Courier New', monospace;
+            font-size: 8pt;
+            color: #888888;
+            margin-top: 2mm;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="certificate">
+        <div class="border-outer">
+            <div class="border-navy">
+                <div class="chakra chakra-tl">☸</div>
+                <div class="chakra chakra-tr">☸</div>
+                <div class="chakra chakra-bl">☸</div>
+                <div class="chakra chakra-br">☸</div>
+
+                <div class="border-green">
+                    <div class="emblem">
+                        <div class="emblem-icon">🏛️</div>
+                    </div>
+
+                    <div class="emboss-seal">
+                        GOVT. OF<br>INDIA<br>✦<br>CERTIFIED
+                    </div>
+
+                    <!-- Header -->
+                    <div class="header">
+                        {% if logo_image %}
+                        <img src="{{ logo_image }}" alt="Logo" class="logo"><br>
+                        {% endif %}
+                        <div class="institution">{{ issuing_authority }}</div>
+                        <div class="institution-sub">Institute of Technology</div>
+                        <div class="title">{{ certificate_title | default('Certificate of Completion') }}</div>
+                        <div class="subtitle">{{ certificate_subtitle | default('Academic Achievement') }}</div>
+                    </div>
+
+                    <!-- Body -->
+                    <div class="content">
+                        <p class="presented-to">This is to certify that</p>
+                        <div class="recipient-name">{{ student_name }}</div>
+                        <p class="description">{{ description_text | default('has successfully completed the prescribed
+                            course of study and passed the examination in') }}</p>
+                        <div class="course-name">{{ course_name }}</div>
+                        {% if custom_body %}
+                        <p class="description">{{ custom_body }}</p>
+                        {% else %}
+                        <p class="description">and is hereby declared eligible for this certificate of proficiency.</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="footer">
+                        <table class="footer-table">
+                            <tr>
+                                <td>
+                                    <div class="signature-line">
+                                        <div class="signature-name">{{ issue_date }}</div>
+                                        <div class="signature-title">Date</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if signature_image %}
+                                    <img src="{{ signature_image }}" alt="Signature" class="signature-img"><br>
+                                    {% endif %}
+                                    <div class="signature-line">
+                                        <div class="signature-name">{{ signature_name }}</div>
+                                        <div class="signature-title">Director</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="signature-line">
+                                        <div class="signature-name">Dean (Academics)</div>
+                                        <div class="certificate-id">Roll No: {{ certificate_id }}</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Modern Abstract Certificate</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 297mm;
+            height: 210mm;
+            font-family: 'Montserrat', sans-serif;
+            background: #fff;
+            color: #333;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .container {
+            width: 297mm;
+            height: 210mm;
+            padding: 0;
+            background: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .shape {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(40mm);
+            opacity: 0.6;
+            z-index: 1;
+        }
+
+        .s1 {
+            width: 150mm;
+            height: 150mm;
+            background: #6366f1;
+            top: -50mm;
+            left: -50mm;
+        }
+
+        .s2 {
+            width: 120mm;
+            height: 120mm;
+            background: #ec4899;
+            bottom: -40mm;
+            right: -40mm;
+        }
+
+        .s3 {
+            width: 100mm;
+            height: 100mm;
+            background: #fbbf24;
+            top: 20mm;
+            right: -30mm;
+        }
+
+        .content {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            height: 100%;
+            padding: 20mm;
+            text-align: center;
+        }
+
+        .header {
+            margin-bottom: 10mm;
+        }
+
+        .logo {
+            max-height: 15mm;
+            margin-bottom: 5mm;
+        }
+
+        .title {
+            font-size: 36pt;
+            font-weight: 900;
+            background: linear-gradient(to right, #6366f1, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 5mm;
+            max-width: 250mm;
+            margin-left: auto;
+            margin-right: auto;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 14pt;
+            font-weight: bold;
+            color: #4b5563;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+        }
+
+        .body {
+            padding: 10mm 0;
+        }
+
+        .recipient {
+            font-size: 40pt;
+            font-weight: 800;
+            color: #111827;
+            margin: 8mm 0;
+        }
+
+        .description {
+            font-size: 14pt;
+            color: #4b5563;
+            line-height: 1.6;
+            max-width: 220mm;
+            margin-left: auto;
+            margin-right: auto;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .course-name {
+            font-size: 20pt;
+            font-weight: bold;
+            color: #6366f1;
+            margin: 4mm 0;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 20mm;
+            left: 20mm;
+            right: 20mm;
+        }
+
+        .footer-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .footer-table td {
+            width: 50%;
+            text-align: center;
+            vertical-align: bottom;
+            padding: 0 10mm;
+        }
+
+        .footer-item {
+            text-align: center;
+        }
+
+        .line {
+            height: 2px;
+            width: 100%;
+            background: #e5e7eb;
+            margin: 2mm auto;
+            position: relative;
+        }
+
+        .line::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 30%;
+            height: 100%;
+            background: #6366f1;
+        }
+
+        .label {
+            font-size: 9pt;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .value {
+            font-size: 12pt;
+            font-weight: 600;
+            color: #1f2937;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="shape s1"></div>
+        <div class="shape s2"></div>
+        <div class="shape s3"></div>
+        <div class="content">
+            <div class="header">
+                {% if logo_url %}
+                <img src="{{logo_url}}" alt="Logo" class="logo">
+                {% endif %}
+                <h1 class="title">{{certificate_title or "Excellence in Innovation"}}</h1>
+                <p class="subtitle">{{certificate_subtitle or "CREATIVE ACHIEVEMENT AWARD"}}</p>
+            </div>
+            <div class="body">
+                <p style="font-size: 14pt; color: #4b5563;">This prestigious recognition is awarded to</p>
+                <h2 class="recipient">{{student_name}}</h2>
+                <p class="description">
+                    {{description_text or "for demonstrating exceptional creativity, critical thinking, and outstanding
+                    performance in the course of"}}
+                </p>
+                <p class="course-name">{{course_name}}</p>
+            </div>
+            <div class="footer">
+                <table class="footer-table">
+                    <tr>
+                        <td>
+                            <div class="footer-item">
+                                <p class="value">{{issue_date}}</p>
+                                <div class="line"></div>
+                                <p class="label">Date of Issue</p>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="footer-item">
+                                {% if signature_image_url %}
+                                <img src="{{signature_image_url}}" alt="Signature"
+                                    style="max-height: 15mm; margin-bottom: 2mm;">
+                                {% endif %}
+                                <div class="line"></div>
+                                <p class="value">{{signature_name}}</p>
+                                <p class="label">{{issuing_authority}}</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

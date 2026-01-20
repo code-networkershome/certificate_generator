@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Eco-Friendly Green Certificate</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 297mm;
+            height: 210mm;
+            font-family: 'DM Sans', sans-serif;
+            background: #f0fdf4;
+            color: #166534;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .container {
+            width: 297mm;
+            height: 210mm;
+            padding: 10mm;
+            background: #f0fdf4;
+            position: relative;
+        }
+
+        .main {
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            border-radius: 20px;
+            padding: 20mm;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            text-align: center;
+            border: 1px solid #dcfce7;
+            box-shadow: 0 10px 30px rgba(22, 101, 52, 0.05);
+        }
+
+        .leaf {
+            font-size: 30pt;
+            color: #22c55e;
+            margin-bottom: 5mm;
+        }
+
+        .title {
+            font-size: 36pt;
+            font-weight: 800;
+            color: #14532d;
+            text-transform: uppercase;
+            max-width: 250mm;
+            margin-left: auto;
+            margin-right: auto;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 12pt;
+            color: #22c55e;
+            letter-spacing: 6px;
+            margin-top: 2mm;
+        }
+
+        .body {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .recipient {
+            font-size: 44pt;
+            font-weight: 800;
+            color: #14532d;
+            margin: 6mm 0;
+            border-bottom: 2px solid #bbf7d0;
+            display: inline-block;
+        }
+
+        .description {
+            font-size: 14pt;
+            color: #166534;
+            line-height: 1.6;
+            max-width: 220mm;
+            margin-left: auto;
+            margin-right: auto;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .course-name {
+            font-size: 20pt;
+            font-weight: bold;
+            color: #15803d;
+            margin: 4mm 0;
+        }
+
+        <div class="footer"><table style="width: 100%; border-collapse: collapse;"><tr><td style="width: 33.33%; text-align: center; vertical-align: bottom;"><div class="footer-item"><p class="value"> {
+                {
+                issue_date
+            }
+        }
+
+        </p><p class="label">Date Issued</p></div></td><td style="width: 33.33%; text-align: center; vertical-align: bottom;"><div class="footer-item"> {
+            % if signature_image_url %
+        }
+
+        <div style="margin-bottom: 2mm;"><img src="{{signature_image_url}}" alt="Signature"
+
+        style="max-height: 12mm; filter: contrast(120%) brightness(0.8) sepia(100%) hue-rotate(60deg);"></div> {
+            % endif %
+        }
+
+        <p class="value"> {
+                {
+                signature_name
+            }
+        }
+
+        </p><p class="label">Director of Learning</p></div></td><td style="width: 33.33%; text-align: center; vertical-align: bottom;"><div class="footer-item"><p class="value"> {
+                {
+                certificate_id
+            }
+        }
+
+        </p><p class="label">Audit ID</p></div></td></tr></table></div></div></div></body></html>

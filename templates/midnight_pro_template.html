@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Midnight Pro Certificate</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 297mm;
+            height: 210mm;
+            font-family: 'Garamond', serif;
+            background: #000;
+            color: #fff;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .container {
+            width: 297mm;
+            height: 210mm;
+            padding: 15mm;
+            background: linear-gradient(135deg, #111, #222);
+            position: relative;
+            border: 5mm solid #c5a059;
+        }
+
+        .inner-border {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #c5a059;
+            padding: 20mm;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header {
+            text-align: center;
+        }
+
+        .logo {
+            max-height: 20mm;
+            margin-bottom: 5mm;
+        }
+
+        .title {
+            font-size: 42pt;
+            font-weight: bold;
+            color: #c5a059;
+            text-transform: uppercase;
+            letter-spacing: 10px;
+            margin-bottom: 5mm;
+            max-width: 250mm;
+            margin-left: auto;
+            margin-right: auto;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 16pt;
+            color: #888;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+        }
+
+        .body {
+            text-align: center;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .presented-to {
+            font-size: 14pt;
+            color: #aaa;
+            margin-bottom: 5mm;
+        }
+
+        .recipient {
+            font-size: 38pt;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 10mm;
+            text-decoration: underline;
+            text-decoration-color: #c5a059;
+        }
+
+        .description {
+            font-size: 13pt;
+            color: #ccc;
+            line-height: 1.8;
+            max-width: 220mm;
+            margin-left: auto;
+            margin-right: auto;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-align: center;
+        }
+
+        .course-name {
+            font-size: 20pt;
+            font-weight: bold;
+            color: #c5a059;
+            margin-top: 5mm;
+        }
+
+        .footer {
+            width: 100%;
+            margin-top: 10mm;
+        }
+
+        .footer table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .footer td {
+            vertical-align: bottom;
+            text-align: center;
+            width: 33.33%;
+        }
+
+        .line {
+            border-top: 1px solid #c5a059;
+            margin-bottom: 2mm;
+            width: 50mm;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .label {
+            font-size: 10pt;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .value {
+            font-size: 12pt;
+            color: #fff;
+            margin-bottom: 1mm;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="inner-border">
+            <div class="header">
+                {% if logo_url %}
+                <div style="margin-bottom: 5mm;">
+                    <img src="{{logo_url}}" alt="Logo" class="logo">
+                </div>
+                {% endif %}
+                <h1 class="title">{{certificate_title or "Certificate"}}</h1>
+                <p class="subtitle">{{certificate_subtitle or "OF ACHIEVEMENT"}}</p>
+            </div>
+            <div class="body">
+                <p class="presented-to" style="margin-top: 5mm;">This recognition is proudly awarded to</p>
+                <h2 class="recipient">{{student_name}}</h2>
+                <p class="description">
+                    {{description_text or "for successful completion of all requirements for the professional
+                    certification in"}}
+                </p>
+                <p class="course-name">{{course_name}}</p>
+                {% if custom_body %}
+                <p class="description" style="margin-top: 5mm;">{{custom_body}}</p>
+                {% endif %}
+            </div>
+            <div class="footer">
+                <table>
+                    <tr>
+                        <td>
+                            <div class="footer-item">
+                                <p class="value">{{issue_date}}</p>
+                                <div class="line"></div>
+                                <p class="label">Date of Issue</p>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="footer-item">
+                                {% if signature_image_url %}
+                                <div style="margin-bottom: 2mm;">
+                                    <img src="{{signature_image_url}}" alt="Signature" style="max-height: 15mm;">
+                                </div>
+                                {% endif %}
+                                <div class="line"></div>
+                                <p class="value">{{signature_name}}</p>
+                                <p class="label">{{issuing_authority}}</p>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="footer-item">
+                                <p class="value">{{certificate_id}}</p>
+                                <div class="line"></div>
+                                <p class="label">Certificate ID</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
