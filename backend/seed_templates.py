@@ -262,5 +262,22 @@ async def seed_templates():
         print(f"\nSeeded {count} templates successfully!")
 
 
+async def seed_templates_if_empty():
+    """Seed templates only if the database has no templates (for auto-startup)"""
+    async with async_session() as db:
+        # Check if templates exist
+        result = await db.execute(select(Template).limit(1))
+        existing = result.scalar_one_or_none()
+        
+        if existing:
+            print("Templates already exist in database, skipping seeding")
+            return
+        
+        print("No templates found, seeding database...")
+    
+    # Call full seed function
+    await seed_templates()
+
+
 if __name__ == "__main__":
     asyncio.run(seed_templates())

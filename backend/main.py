@@ -27,6 +27,13 @@ async def lifespan(app: FastAPI):
     Path(settings.TEMPLATES_PATH).mkdir(parents=True, exist_ok=True)
     Path(settings.STORAGE_PATH + "/uploads").mkdir(parents=True, exist_ok=True)
     
+    # Auto-seed templates if none exist
+    try:
+        from seed_templates import seed_templates_if_empty
+        await seed_templates_if_empty()
+    except Exception as e:
+        print(f"Warning: Could not seed templates: {e}")
+    
     print("Certificate Generation System started")
     
     yield
