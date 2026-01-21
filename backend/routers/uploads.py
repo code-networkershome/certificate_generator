@@ -7,13 +7,23 @@ import os
 import uuid
 from datetime import datetime
 
+from config import get_settings
+
+settings = get_settings()
+
 router = APIRouter(prefix="/upload", tags=["uploads"])
 
 # Storage directory for uploaded images
-UPLOAD_DIR = "/app/storage/uploads"
+# Use STORAGE_PATH from env or fallback to /tmp for Render
+UPLOAD_DIR = os.path.join(settings.STORAGE_PATH or "/tmp/storage", "uploads")
 
-# Ensure upload directory exists
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+# Ensure upload directory exists (with error handling for restricted environments)
+try:
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+except PermissionError:
+    # Fallback to /tmp if we can't create in the configured path
+    UPLOAD_DIR = "/tmp/uploads"
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # Allowed image extensions
 ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"}
