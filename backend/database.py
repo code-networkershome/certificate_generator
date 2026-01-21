@@ -17,14 +17,26 @@ def get_database_url():
     """Convert DATABASE_URL to async format for SQLAlchemy."""
     url = settings.DATABASE_URL
     
+    # Debug: print the original URL (masked for security)
+    if url:
+        masked = url[:30] + "..." if len(url) > 30 else url
+        print(f"Original DATABASE_URL starts with: {masked}")
+    
+    # If it already has +asyncpg, it's already correct
+    if "+asyncpg" in url:
+        return url
+    
     # Render provides postgres:// but asyncpg needs postgresql+asyncpg://
+    # Only replace the scheme prefix, nothing else
     if url.startswith("postgres://"):
-        url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+        url = "postgresql+asyncpg://" + url[len("postgres://"):]
     elif url.startswith("postgresql://"):
-        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
-    # If it already has +asyncpg, leave it alone
-    elif "+asyncpg" in url:
-        pass
+        url = "postgresql+asyncpg://" + url[len("postgresql://"):]
+    
+    # Debug: print the converted URL
+    if url:
+        masked = url[:40] + "..." if len(url) > 40 else url
+        print(f"Converted DATABASE_URL starts with: {masked}")
     
     return url
 
