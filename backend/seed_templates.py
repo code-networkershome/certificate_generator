@@ -263,19 +263,21 @@ async def seed_templates():
 
 
 async def seed_templates_if_empty():
-    """Seed templates only if the database has no templates (for auto-startup)"""
+    """Seed templates only if the database has no templates or incomplete (for auto-startup)"""
+    from sqlalchemy import func
+    
     async with async_session() as db:
-        # Check if templates exist
-        result = await db.execute(select(Template).limit(1))
-        existing = result.scalar_one_or_none()
+        # Count existing templates
+        result = await db.execute(select(func.count(Template.id)))
+        count = result.scalar() or 0
         
-        if existing:
-            # Check if thumbnail URLs need fixing (they should be None)
-            if existing.thumbnail_url is not None:
-                print("Templates have old thumbnail URLs, reseeding...")
-            else:
-                print("Templates already exist in database, skipping seeding")
-                return
+        expected_count = len(TEMPLATES)  # Should be 32
+        
+        if count >= expected_count:
+            print(f"Templates already seeded ({count} templates), skipping")
+            return
+        elif count > 0:
+            print(f"Incomplete seeding detected ({count}/{expected_count} templates), reseeding...")
         else:
             print("No templates found, seeding database...")
     

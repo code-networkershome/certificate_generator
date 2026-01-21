@@ -34,10 +34,13 @@ export const authService = {
         return data;
     },
 
-    // Sign out
+    // Sign out - always succeeds locally even if server session expired
     async signOut() {
-        const { error } = await supabase.auth.signOut();
-        if (error) throw error;
+        const { error } = await supabase.auth.signOut({ scope: 'local' });
+        // Ignore errors - we want to clear local state regardless
+        if (error) {
+            console.warn('Signout warning:', error.message);
+        }
     },
 
     // Get current session
