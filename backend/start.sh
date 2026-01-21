@@ -1,10 +1,7 @@
 #!/bin/bash
 
 # Render startup script for the backend
-cd /app
-
-# Run database migrations (if any)
-# python -c "from database import init_db; import asyncio; asyncio.run(init_db())"
+# Note: Render runs from /opt/render/project/src/backend
 
 # Start the application with gunicorn
 exec gunicorn main:app \

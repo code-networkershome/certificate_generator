@@ -12,9 +12,25 @@ from config import get_settings
 
 settings = get_settings()
 
+# Fix DATABASE_URL for async SQLAlchemy (Render uses postgres://)
+def get_database_url():
+    """Convert DATABASE_URL to async format for SQLAlchemy."""
+    url = settings.DATABASE_URL
+    
+    # Render provides postgres:// but asyncpg needs postgresql+asyncpg://
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    # If it already has +asyncpg, leave it alone
+    elif "+asyncpg" in url:
+        pass
+    
+    return url
+
 # Create async engine
 engine = create_async_engine(
-    settings.DATABASE_URL,
+    get_database_url(),
     echo=settings.DEBUG,
     pool_pre_ping=True,
     pool_size=10,
