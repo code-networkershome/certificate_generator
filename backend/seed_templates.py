@@ -249,7 +249,7 @@ async def seed_templates():
                     name=tmpl_data["name"],
                     description=tmpl_data["description"],
                     html_content=html_content,
-                    thumbnail_url=tmpl_data.get("thumbnail_url"),
+                    thumbnail_url=None,  # Preview images not available, show placeholder
                     is_active=True
                 )
                 db.add(template)
@@ -270,10 +270,14 @@ async def seed_templates_if_empty():
         existing = result.scalar_one_or_none()
         
         if existing:
-            print("Templates already exist in database, skipping seeding")
-            return
-        
-        print("No templates found, seeding database...")
+            # Check if thumbnail URLs need fixing (they should be None)
+            if existing.thumbnail_url is not None:
+                print("Templates have old thumbnail URLs, reseeding...")
+            else:
+                print("Templates already exist in database, skipping seeding")
+                return
+        else:
+            print("No templates found, seeding database...")
     
     # Call full seed function
     await seed_templates()
