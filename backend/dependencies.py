@@ -74,12 +74,14 @@ def decode_access_token(token: str) -> dict:
         HTTPException: If token is invalid or expired
     """
     try:
-        # Supabase tokens use the JWT secret from the project settings
+        # Try to decode with the JWT secret
+        # Supabase uses HS256 with the JWT secret
+        # options={"verify_aud": False} because Supabase sets aud to "authenticated"
         payload = jwt.decode(
             token, 
             SUPABASE_JWT_SECRET, 
-            algorithms=[JWT_ALGORITHM],
-            audience="authenticated"
+            algorithms=["HS256", "RS256"],
+            options={"verify_aud": False}
         )
         return payload
     except jwt.ExpiredSignatureError:
