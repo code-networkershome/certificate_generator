@@ -231,6 +231,21 @@ a:hover {
   width: 100%;
 }
 
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--color-accent-primary);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  padding: 0;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.btn-link:hover {
+  color: var(--color-accent-hover);
+}
+
 /* ============================================
    FORM COMPONENTS
    ============================================ */

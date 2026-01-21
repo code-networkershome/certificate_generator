@@ -1,6 +1,6 @@
 """
 FastAPI Dependencies for Certificate Generation System
-JWT authentication and user extraction
+JWT authentication with Supabase
 """
 
 from datetime import datetime, timedelta, timezone
@@ -8,17 +8,18 @@ from typing import Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
+import os
 
 from models import TokenPayload
 
 
 # ============================================
-# CONFIGURATION (move to config file in production)
+# CONFIGURATION
 # ============================================
 
-JWT_SECRET_KEY = "your-secret-key-change-in-production"  # Use env variable
+# Supabase JWT secret - get from Supabase Dashboard -> Settings -> API -> JWT Secret
+SUPABASE_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET", "your-supabase-jwt-secret")
 JWT_ALGORITHM = "HS256"
-JWT_EXPIRATION_HOURS = 24
 
 
 # ============================================
@@ -59,29 +60,36 @@ def create_access_token(user_id: str, expires_delta: Optional[timedelta] = None)
     return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
 
 
-def decode_access_token(token: str) -> TokenPayload:
+def decode_access_token(token: str) -> dict:
     """
-    Decode and validate a JWT access token.
+    Decode and validate a Supabase JWT access token.
     
     Args:
-        token: The JWT token string
+        token: The JWT token string from Supabase
         
     Returns:
-        TokenPayload with user information
+        Dict with user information from token payload
         
     Raises:
         HTTPException: If token is invalid or expired
     """
     try:
-        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
-        return TokenPayload(**payload)
+        # Supabase tokens use the JWT secret from the project settings
+        payload = jwt.decode(
+            token, 
+            SUPABASE_JWT_SECRET, 
+            algorithms=[JWT_ALGORITHM],
+            audience="authenticated"
+        )
+        return payload
     except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token has expired",
             headers={"WWW-Authenticate": "Bearer"}
         )
-    except jwt.InvalidTokenError:
+    except jwt.InvalidTokenError as e:
+        print(f"JWT decode error: {e}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token",
@@ -97,13 +105,13 @@ async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> str:
     """
-    Dependency to extract and validate current user from JWT token.
+    Dependency to extract and validate current user from Supabase JWT token.
     
     Args:
         credentials: Bearer token from Authorization header
         
     Returns:
-        User ID string from the token
+        User ID string from the Supabase token (UUID)
         
     Raises:
         HTTPException: If authentication fails
@@ -111,12 +119,15 @@ async def get_current_user(
     token = credentials.credentials
     token_payload = decode_access_token(token)
     
-    # In production: verify user still exists in database
-    # user = await get_user_by_id(token_payload.sub)
-    # if not user or not user.is_active:
-    #     raise HTTPException(status_code=401, detail="User not found or inactive")
+    # Supabase tokens have 'sub' field with user UUID
+    user_id = token_payload.get("sub")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token: no user ID"
+        )
     
-    return token_payload.sub
+    return user_id
 
 
 async def get_current_active_user(

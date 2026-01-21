@@ -7,15 +7,38 @@ import CertificateEditor from './components/CertificateEditor';
 // AUTH CONTEXT
 // ============================================
 function useAuth() {
-    const [isAuthenticated, setIsAuthenticated] = useState(authAPI.isAuthenticated());
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        // Check initial auth state
+        const checkAuth = async () => {
+            try {
+                const authenticated = await authAPI.isAuthenticated();
+                setIsAuthenticated(authenticated);
+            } catch {
+                setIsAuthenticated(false);
+            } finally {
+                setLoading(false);
+            }
+        };
+        checkAuth();
+
+        // Listen for auth state changes
+        const { data: { subscription } } = authAPI.onAuthStateChange((event, session) => {
+            setIsAuthenticated(!!session);
+        });
+
+        return () => subscription?.unsubscribe();
+    }, []);
 
     const login = () => setIsAuthenticated(true);
-    const logout = () => {
-        authAPI.logout();
+    const logout = async () => {
+        await authAPI.logout();
         setIsAuthenticated(false);
     };
 
-    return { isAuthenticated, login, logout };
+    return { isAuthenticated, loading, login, logout };
 }
 
 // ============================================
@@ -65,71 +88,41 @@ function Header({ isAuthenticated, onLogout, onHistoryClick }) {
 // LOGIN PAGE
 // ============================================
 function LoginPage({ onLogin }) {
-    const [otpType, setOtpType] = useState('email');
+    const [isSignUp, setIsSignUp] = useState(false);
     const [email, setEmail] = useState('');
-    const [phone, setPhone] = useState('');
-    const [otpSent, setOtpSent] = useState(false);
-    const [otp, setOtp] = useState(['', '', '', '', '', '']);
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
     const navigate = useNavigate();
 
-    const handleSendOTP = async (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
+        setMessage('');
 
         try {
-            const response = await authAPI.sendOTP(
-                otpType,
-                otpType === 'email' ? email : null,
-                otpType === 'phone' ? phone : null
-            );
-            setMessage(response.message);
-            setOtpSent(true);
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleOtpChange = (index, value) => {
-        if (value.length > 1) return;
-
-        const newOtp = [...otp];
-        newOtp[index] = value;
-        setOtp(newOtp);
-
-        // Auto-focus next input
-        if (value && index < 5) {
-            const nextInput = document.querySelector(`input[name=otp-${index + 1}]`);
-            nextInput?.focus();
-        }
-    };
-
-    const handleVerifyOTP = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        setError('');
-
-        const otpCode = otp.join('');
-        if (otpCode.length !== 6) {
-            setError('Please enter complete OTP');
-            setLoading(false);
-            return;
-        }
-
-        try {
-            await authAPI.verifyOTP(
-                otpType,
-                otpType === 'email' ? email : null,
-                otpType === 'phone' ? phone : null,
-                otpCode
-            );
-            onLogin();
-            navigate('/generate');
+            if (isSignUp) {
+                if (password !== confirmPassword) {
+                    throw new Error('Passwords do not match');
+                }
+                if (password.length < 6) {
+                    throw new Error('Password must be at least 6 characters');
+                }
+                const result = await authAPI.signUp(email, password);
+                if (result.user && !result.session) {
+                    setMessage('Please check your email to confirm your account.');
+                } else {
+                    onLogin();
+                    navigate('/generate');
+                }
+            } else {
+                await authAPI.signIn(email, password);
+                onLogin();
+                navigate('/generate');
+            }
         } catch (err) {
             setError(err.message);
         } finally {
@@ -141,96 +134,70 @@ function LoginPage({ onLogin }) {
         <div className="auth-container">
             <div className="card auth-card card-glass">
                 <div className="auth-header">
-                    <h1 className="auth-title">Welcome Back</h1>
-                    <p className="auth-subtitle">Sign in with OTP to continue</p>
+                    <h1 className="auth-title">{isSignUp ? 'Create Account' : 'Welcome Back'}</h1>
+                    <p className="auth-subtitle">
+                        {isSignUp ? 'Sign up to start generating certificates' : 'Sign in to continue'}
+                    </p>
                 </div>
 
                 {error && <div className="alert alert-error">{error}</div>}
                 {message && <div className="alert alert-success">{message}</div>}
 
-                {!otpSent ? (
-                    <form onSubmit={handleSendOTP}>
-                        <div className="auth-tabs">
-                            <button
-                                type="button"
-                                className={`auth-tab ${otpType === 'email' ? 'active' : ''}`}
-                                onClick={() => setOtpType('email')}
-                            >
-                                Email
-                            </button>
-                            <button
-                                type="button"
-                                className={`auth-tab ${otpType === 'phone' ? 'active' : ''}`}
-                                onClick={() => setOtpType('phone')}
-                            >
-                                Phone
-                            </button>
-                        </div>
+                <form onSubmit={handleSubmit}>
+                    <div className="form-group">
+                        <label className="form-label">Email Address</label>
+                        <input
+                            type="email"
+                            className="form-input"
+                            placeholder="you@example.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                        />
+                    </div>
 
+                    <div className="form-group">
+                        <label className="form-label">Password</label>
+                        <input
+                            type="password"
+                            className="form-input"
+                            placeholder="Enter your password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                            minLength={6}
+                        />
+                    </div>
+
+                    {isSignUp && (
                         <div className="form-group">
-                            <label className="form-label">
-                                {otpType === 'email' ? 'Email Address' : 'Phone Number'}
-                            </label>
-                            {otpType === 'email' ? (
-                                <input
-                                    type="email"
-                                    className="form-input"
-                                    placeholder="you@example.com"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    required
-                                />
-                            ) : (
-                                <input
-                                    type="tel"
-                                    className="form-input"
-                                    placeholder="+1234567890"
-                                    value={phone}
-                                    onChange={(e) => setPhone(e.target.value)}
-                                    required
-                                />
-                            )}
+                            <label className="form-label">Confirm Password</label>
+                            <input
+                                type="password"
+                                className="form-input"
+                                placeholder="Confirm your password"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                required
+                                minLength={6}
+                            />
                         </div>
+                    )}
 
-                        <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading}>
-                            {loading ? <span className="spinner" /> : 'Send OTP'}
-                        </button>
-                    </form>
-                ) : (
-                    <form onSubmit={handleVerifyOTP}>
-                        <p className="text-center mb-xl text-muted">
-                            Enter the 6-digit code sent to {otpType === 'email' ? email : phone}
-                        </p>
+                    <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading}>
+                        {loading ? <span className="spinner" /> : (isSignUp ? 'Sign Up' : 'Sign In')}
+                    </button>
+                </form>
 
-                        <div className="otp-input-group mb-xl">
-                            {otp.map((digit, index) => (
-                                <input
-                                    key={index}
-                                    name={`otp-${index}`}
-                                    type="text"
-                                    inputMode="numeric"
-                                    maxLength={1}
-                                    className="otp-input"
-                                    value={digit}
-                                    onChange={(e) => handleOtpChange(index, e.target.value)}
-                                    autoFocus={index === 0}
-                                />
-                            ))}
-                        </div>
-
-                        <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading}>
-                            {loading ? <span className="spinner" /> : 'Verify OTP'}
-                        </button>
-
-                        <button
-                            type="button"
-                            className="btn btn-secondary btn-full mt-md"
-                            onClick={() => { setOtpSent(false); setOtp(['', '', '', '', '', '']); }}
-                        >
-                            Change {otpType}
-                        </button>
-                    </form>
-                )}
+                <div className="text-center mt-lg">
+                    <button
+                        type="button"
+                        className="btn-link"
+                        onClick={() => { setIsSignUp(!isSignUp); setError(''); setMessage(''); }}
+                    >
+                        {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+                    </button>
+                </div>
             </div>
         </div>
     );

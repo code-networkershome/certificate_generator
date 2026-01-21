@@ -1,14 +1,24 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-// Token management
-const getToken = () => localStorage.getItem('access_token');
-const setToken = (token) => localStorage.setItem('access_token', token);
-const removeToken = () => localStorage.removeItem('access_token');
+import { authService } from './supabase';
 
-// API request helper
+// Token management - now using Supabase
+const getToken = async () => {
+    try {
+        return await authService.getAccessToken();
+    } catch {
+        return null;
+    }
+};
+
+// Legacy token functions for compatibility (now async wrapper)
+const setToken = () => { }; // Supabase handles token storage
+const removeToken = () => { }; // Supabase handles token removal
+
+// API request helper - now async to get Supabase token
 async function request(endpoint, options = {}) {
     const url = `${API_URL}${endpoint}`;
-    const token = getToken();
+    const token = await getToken();
 
     const config = {
         ...options,
@@ -29,43 +39,35 @@ async function request(endpoint, options = {}) {
     return response.json();
 }
 
-// Auth API
+// Auth API - now wraps Supabase auth
 export const authAPI = {
-    sendOTP: async (otpType, email, phone) => {
-        return request('/auth/send-otp', {
-            method: 'POST',
-            body: JSON.stringify({
-                otp_type: otpType,
-                ...(email && { email }),
-                ...(phone && { phone }),
-            }),
-        });
+    signUp: async (email, password) => {
+        return authService.signUp(email, password);
     },
 
-    verifyOTP: async (otpType, email, phone, otpCode) => {
-        const response = await request('/auth/verify-otp', {
-            method: 'POST',
-            body: JSON.stringify({
-                otp_type: otpType,
-                ...(email && { email }),
-                ...(phone && { phone }),
-                otp_code: otpCode,
-            }),
-        });
-
-        if (response.access_token) {
-            setToken(response.access_token);
-        }
-
-        return response;
+    signIn: async (email, password) => {
+        return authService.signIn(email, password);
     },
 
-    logout: () => {
-        removeToken();
+    logout: async () => {
+        await authService.signOut();
     },
 
-    isAuthenticated: () => {
-        return !!getToken();
+    isAuthenticated: async () => {
+        const session = await authService.getSession();
+        return !!session;
+    },
+
+    getUser: async () => {
+        return authService.getUser();
+    },
+
+    resetPassword: async (email) => {
+        return authService.resetPassword(email);
+    },
+
+    onAuthStateChange: (callback) => {
+        return authService.onAuthStateChange(callback);
     },
 };
 
