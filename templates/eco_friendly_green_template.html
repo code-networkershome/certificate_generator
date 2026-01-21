@@ -19,7 +19,7 @@
         body {
             width: 297mm;
             height: 210mm;
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'DM Sans', Arial, sans-serif;
             background: #f0fdf4;
             color: #166534;
             -webkit-print-color-adjust: exact;
@@ -38,20 +38,21 @@
             height: 100%;
             background: #fff;
             border-radius: 20px;
-            padding: 20mm;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
+            padding: 15mm;
             text-align: center;
             border: 1px solid #dcfce7;
             box-shadow: 0 10px 30px rgba(22, 101, 52, 0.05);
+            position: relative;
         }
 
         .leaf {
             font-size: 30pt;
             color: #22c55e;
             margin-bottom: 5mm;
+        }
+
+        .header {
+            margin-bottom: 10mm;
         }
 
         .title {
@@ -75,20 +76,17 @@
         }
 
         .body {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            width: 100%;
+            padding: 10mm 0;
         }
 
         .recipient {
-            font-size: 44pt;
+            font-size: 40pt;
             font-weight: 800;
             color: #14532d;
-            margin: 6mm 0;
+            margin: 8mm 0;
             border-bottom: 2px solid #bbf7d0;
             display: inline-block;
+            padding-bottom: 3mm;
         }
 
         .description {
@@ -107,35 +105,105 @@
             font-size: 20pt;
             font-weight: bold;
             color: #15803d;
-            margin: 4mm 0;
+            margin: 5mm 0;
         }
 
-        <div class="footer"><table style="width: 100%; border-collapse: collapse;"><tr><td style="width: 33.33%; text-align: center; vertical-align: bottom;"><div class="footer-item"><p class="value"> {
-                {
-                issue_date
-            }
+        .footer {
+            position: absolute;
+            bottom: 15mm;
+            left: 15mm;
+            right: 15mm;
         }
 
-        </p><p class="label">Date Issued</p></div></td><td style="width: 33.33%; text-align: center; vertical-align: bottom;"><div class="footer-item"> {
-            % if signature_image_url %
+        .footer-table {
+            width: 100%;
+            border-collapse: collapse;
         }
 
-        <div style="margin-bottom: 2mm;"><img src="{{signature_image_url}}" alt="Signature"
-
-        style="max-height: 12mm; filter: contrast(120%) brightness(0.8) sepia(100%) hue-rotate(60deg);"></div> {
-            % endif %
+        .footer-table td {
+            width: 33.33%;
+            text-align: center;
+            vertical-align: bottom;
+            padding: 0 5mm;
         }
 
-        <p class="value"> {
-                {
-                signature_name
-            }
+        .footer-item {
+            text-align: center;
         }
 
-        </p><p class="label">Director of Learning</p></div></td><td style="width: 33.33%; text-align: center; vertical-align: bottom;"><div class="footer-item"><p class="value"> {
-                {
-                certificate_id
-            }
+        .label {
+            font-size: 9pt;
+            color: #22c55e;
+            text-transform: uppercase;
+            margin-top: 2mm;
         }
 
-        </p><p class="label">Audit ID</p></div></td></tr></table></div></div></div></body></html>
+        .value {
+            font-size: 11pt;
+            font-weight: 600;
+            color: #14532d;
+        }
+
+        .line {
+            border-top: 1px solid #22c55e;
+            width: 100%;
+            margin: 2mm auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="main">
+            <div class="header">
+                <p class="leaf">🌿</p>
+                <h1 class="title">{{certificate_title or "Green Achievement Certificate"}}</h1>
+                <p class="subtitle">{{certificate_subtitle or "ECO-CONSCIOUS EXCELLENCE"}}</p>
+            </div>
+            <div class="body">
+                <p style="font-size: 14pt; color: #166534;">This eco-certificate is awarded to</p>
+                <h2 class="recipient">{{student_name}}</h2>
+                <p class="description">
+                    {{description_text or "for demonstrating commitment to sustainable learning and successfully
+                    completing"}}
+                </p>
+                <p class="course-name">{{course_name}}</p>
+            </div>
+            <div class="footer">
+                <table class="footer-table">
+                    <tr>
+                        <td>
+                            <div class="footer-item">
+                                <p class="value">{{issue_date}}</p>
+                                <div class="line"></div>
+                                <p class="label">Date Issued</p>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="footer-item">
+                                {% if signature_image_url %}
+                                <div style="margin-bottom: 2mm;">
+                                    <img src="{{signature_image_url}}" alt="Signature"
+                                        style="max-height: 12mm; filter: contrast(120%) brightness(0.8) sepia(100%) hue-rotate(60deg);">
+                                </div>
+                                {% endif %}
+                                <div class="line"></div>
+                                <p class="value">{{signature_name}}</p>
+                                <p class="label">Director of Learning</p>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="footer-item">
+                                <p class="value">{{certificate_id}}</p>
+                                <div class="line"></div>
+                                <p class="label">Audit ID</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

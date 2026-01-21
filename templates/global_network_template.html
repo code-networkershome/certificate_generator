@@ -38,29 +38,19 @@
             height: 100%;
             border: 1px solid #e2e8f0;
             background: #fff;
-            padding: 20mm;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
+            padding: 15mm;
             text-align: center;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            position: relative;
         }
 
         .header {
-            margin-bottom: 5mm;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            margin-bottom: 10mm;
         }
 
         .logo {
             max-height: 15mm;
-        }
-
-        .title-box {
-            text-align: right;
+            margin-bottom: 5mm;
         }
 
         .title {
@@ -68,30 +58,29 @@
             font-weight: 300;
             color: #0f172a;
             text-transform: uppercase;
-            max-width: 200mm;
+            max-width: 250mm;
+            margin: 0 auto;
             word-wrap: break-word;
             overflow-wrap: break-word;
+            text-align: center;
         }
 
         .subtitle {
             font-size: 10pt;
             color: #64748b;
             letter-spacing: 4px;
+            margin-top: 2mm;
         }
 
         .body {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            width: 100%;
+            padding: 10mm 0;
         }
 
         .recipient {
-            font-size: 46pt;
+            font-size: 42pt;
             font-weight: 800;
             color: #1e293b;
-            margin: 8mm 0;
+            margin: 10mm 0;
             letter-spacing: -2px;
         }
 
@@ -111,33 +100,106 @@
             font-size: 20pt;
             font-weight: bold;
             color: #3b82f6;
-            margin: 4mm 0;
+            margin: 5mm 0;
         }
 
-        <div class="footer"><table style="width: 100%; border-collapse: collapse;"><tr><td style="width: 33.33%; text-align: center; vertical-align: bottom;"><div class="footer-item"><p class="value"> {
-                {
-                issue_date
-            }
+        .footer {
+            position: absolute;
+            bottom: 15mm;
+            left: 15mm;
+            right: 15mm;
         }
 
-        </p><p class="label">Issuance Date</p></div></td><td style="width: 33.33%; text-align: center; vertical-align: bottom;"><div class="footer-item"> {
-            % if signature_image_url %
+        .footer-table {
+            width: 100%;
+            border-collapse: collapse;
         }
 
-        <div style="margin-bottom: 2mm;"><img src="{{signature_image_url}}" alt="Signature" style="max-height: 12mm;"></div> {
-            % endif %
+        .footer-table td {
+            width: 33.33%;
+            text-align: center;
+            vertical-align: bottom;
+            padding: 0 5mm;
         }
 
-        <p class="value"> {
-                {
-                signature_name
-            }
+        .footer-item {
+            text-align: center;
         }
 
-        </p><p class="label">Governing Authority</p></div></td><td style="width: 33.33%; text-align: center; vertical-align: bottom;"><div class="footer-item"><p class="value"> {
-                {
-                certificate_id
-            }
+        .label {
+            font-size: 9pt;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-top: 2mm;
         }
 
-        </p><p class="label">Network ID</p></div></td></tr></table></div></div></div></body></html>
+        .value {
+            font-size: 11pt;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .line {
+            border-top: 1px solid #64748b;
+            width: 100%;
+            margin: 2mm auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="main">
+            <div class="header">
+                {% if logo_url %}
+                <img src="{{logo_url}}" alt="Logo" class="logo">
+                {% endif %}
+                <h1 class="title">{{certificate_title or "Global Certification"}}</h1>
+                <p class="subtitle">{{certificate_subtitle or "INTERNATIONAL STANDARDS COMPLIANCE"}}</p>
+            </div>
+            <div class="body">
+                <p style="font-size: 14pt; color: #475569;">This certifies that</p>
+                <h2 class="recipient">{{student_name}}</h2>
+                <p class="description">
+                    {{description_text or "has successfully demonstrated global competency and completed all
+                    requirements for"}}
+                </p>
+                <p class="course-name">{{course_name}}</p>
+            </div>
+            <div class="footer">
+                <table class="footer-table">
+                    <tr>
+                        <td>
+                            <div class="footer-item">
+                                <p class="value">{{issue_date}}</p>
+                                <div class="line"></div>
+                                <p class="label">Issuance Date</p>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="footer-item">
+                                {% if signature_image_url %}
+                                <div style="margin-bottom: 2mm;">
+                                    <img src="{{signature_image_url}}" alt="Signature" style="max-height: 12mm;">
+                                </div>
+                                {% endif %}
+                                <div class="line"></div>
+                                <p class="value">{{signature_name}}</p>
+                                <p class="label">Governing Authority</p>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="footer-item">
+                                <p class="value">{{certificate_id}}</p>
+                                <div class="line"></div>
+                                <p class="label">Network ID</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

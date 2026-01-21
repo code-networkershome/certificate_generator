@@ -34,33 +34,40 @@ class OTPService:
     ) -> bool:
         """
         Check if action is rate limited.
-        Returns True if allowed, raises exception if rate limited.
+        Returns True if allowed, False if rate limited.
         """
         window_start = datetime.now(timezone.utc) - timedelta(minutes=settings.OTP_RATE_LIMIT_MINUTES)
+        now = datetime.now(timezone.utc)
         
-        # Find existing rate limit record
+        # Find ANY existing rate limit record for this identifier+action_type
         stmt = select(RateLimit).where(
             and_(
                 RateLimit.identifier == identifier,
-                RateLimit.action_type == action_type,
-                RateLimit.window_start > window_start
+                RateLimit.action_type == action_type
             )
         )
         result = await db.execute(stmt)
         record = result.scalar_one_or_none()
         
-        if record and record.attempt_count >= settings.OTP_MAX_ATTEMPTS:
-            return False  # Rate limited
-        
-        # Increment or create record
         if record:
-            record.attempt_count += 1
+            # Record exists - check if it's within the rate limit window
+            if record.window_start > window_start:
+                # Within window - check if rate limited
+                if record.attempt_count >= settings.OTP_MAX_ATTEMPTS:
+                    return False  # Rate limited
+                # Increment attempt count
+                record.attempt_count += 1
+            else:
+                # Window expired - reset the record
+                record.attempt_count = 1
+                record.window_start = now
         else:
+            # No record exists - create new one
             db.add(RateLimit(
                 identifier=identifier,
                 action_type=action_type,
                 attempt_count=1,
-                window_start=datetime.now(timezone.utc)
+                window_start=now
             ))
         
         return True

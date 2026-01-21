@@ -19,7 +19,7 @@
         body {
             width: 297mm;
             height: 210mm;
-            font-family: 'Times New Roman', serif;
+            font-family: 'Times New Roman', Georgia, serif;
             background: #fff;
             color: #262626;
             -webkit-print-color-adjust: exact;
@@ -48,22 +48,20 @@
             border: 4mm solid #b8860b;
             padding: 15mm;
             background: #fff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
+            text-align: center;
+            position: relative;
         }
 
         .header {
-            text-align: center;
+            margin-bottom: 10mm;
         }
 
         .title {
-            font-size: 52pt;
+            font-size: 48pt;
             font-weight: normal;
             font-style: italic;
             color: #8b4513;
-            margin-bottom: 2mm;
+            margin-bottom: 3mm;
             max-width: 250mm;
             margin-left: auto;
             margin-right: auto;
@@ -80,11 +78,7 @@
         }
 
         .body {
-            text-align: center;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+            padding: 10mm 0;
         }
 
         .presented-to {
@@ -93,11 +87,11 @@
         }
 
         .recipient {
-            font-size: 44pt;
+            font-size: 40pt;
             font-weight: bold;
             font-family: 'Georgia', serif;
             color: #262626;
-            margin: 5mm 0;
+            margin: 8mm 0;
             font-style: italic;
         }
 
@@ -117,7 +111,7 @@
             font-size: 24pt;
             font-weight: bold;
             color: #8b4513;
-            margin: 3mm 0;
+            margin: 5mm 0;
         }
 
         .flourish {
@@ -126,30 +120,95 @@
             margin: 5mm 0;
         }
 
-        <div class="footer"><table style="width: 100%; border-collapse: collapse;"><tr><td style="width: 50%; text-align: center; vertical-align: bottom;"><div class="footer-item"><p class="value"> {
-                {
-                issue_date
-            }
+        .footer {
+            position: absolute;
+            bottom: 15mm;
+            left: 15mm;
+            right: 15mm;
         }
 
-        </p><div class="line" style="margin: 2mm auto 0 auto;"></div><p class="label">Dated</p></div></td><td style="width: 50%; text-align: center; vertical-align: bottom;"><div class="footer-item"> {
-            % if signature_image_url %
+        .footer-table {
+            width: 100%;
+            border-collapse: collapse;
         }
 
-        <div style="margin-bottom: 2mm;"><img src="{{signature_image_url}}" alt="Signature" style="max-height: 15mm;"></div> {
-            % endif %
+        .footer-table td {
+            width: 50%;
+            text-align: center;
+            vertical-align: bottom;
+            padding: 0 10mm;
         }
 
-        <div class="line" style="margin: 0 auto;"></div><p class="value"> {
-                {
-                signature_name
-            }
+        .footer-item {
+            text-align: center;
         }
 
-        </p><p class="label"> {
-                {
-                issuing_authority
-            }
+        .line {
+            border-top: 2px solid #b8860b;
+            width: 60mm;
+            margin: 2mm auto;
         }
 
-        </p></div></td></tr></table></div></div></div></div></body></html>
+        .label {
+            font-size: 9pt;
+            color: #8b4513;
+            text-transform: uppercase;
+        }
+
+        .value {
+            font-size: 12pt;
+            font-weight: 600;
+            color: #262626;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="gold-frame">
+            <div class="inner-frame">
+                <div class="header">
+                    <h1 class="title">{{certificate_title or "Certificate of Excellence"}}</h1>
+                    <p class="subtitle">{{certificate_subtitle or "PREMIUM RECOGNITION"}}</p>
+                </div>
+                <div class="body">
+                    <p class="presented-to">Presented with distinction to</p>
+                    <h2 class="recipient">{{student_name}}</h2>
+                    <p class="flourish">❧</p>
+                    <p class="description">
+                        {{description_text or "in recognition of exceptional achievement and outstanding dedication in
+                        completing"}}
+                    </p>
+                    <p class="course-name">{{course_name}}</p>
+                </div>
+                <div class="footer">
+                    <table class="footer-table">
+                        <tr>
+                            <td>
+                                <div class="footer-item">
+                                    <p class="value">{{issue_date}}</p>
+                                    <div class="line"></div>
+                                    <p class="label">Dated</p>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="footer-item">
+                                    {% if signature_image_url %}
+                                    <div style="margin-bottom: 2mm;">
+                                        <img src="{{signature_image_url}}" alt="Signature" style="max-height: 15mm;">
+                                    </div>
+                                    {% endif %}
+                                    <div class="line"></div>
+                                    <p class="value">{{signature_name}}</p>
+                                    <p class="label">{{issuing_authority}}</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

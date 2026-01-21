@@ -131,6 +131,57 @@ export const certificatesAPI = {
     getHistory: async () => {
         return request('/certificate/history');
     },
+
+    preview: async (templateId, certificateData, elementPositions = [], elementStyles = []) => {
+        return request('/certificate/preview', {
+            method: 'POST',
+            body: JSON.stringify({
+                template_id: templateId,
+                certificate_data: certificateData,
+                element_positions: elementPositions,
+                element_styles: elementStyles
+            }),
+        });
+    },
+
+    finalize: async (templateId, certificateData, elementPositions = [], elementStyles = [], outputFormats = ['pdf']) => {
+        return request('/certificate/finalize', {
+            method: 'POST',
+            body: JSON.stringify({
+                template_id: templateId,
+                certificate_data: certificateData,
+                element_positions: elementPositions,
+                element_styles: elementStyles,
+                output_formats: outputFormats
+            }),
+        });
+    },
 };
 
-export { getToken, setToken, removeToken };
+// Uploads API
+export const uploadsAPI = {
+    uploadImage: async (file) => {
+        const url = `${API_URL}/upload/image`;
+        const token = getToken();
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                ...(token && { Authorization: `Bearer ${token}` }),
+            },
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ detail: 'Upload failed' }));
+            throw new Error(error.detail || 'Upload failed');
+        }
+
+        return response.json();
+    },
+};
+
+export { getToken, setToken, removeToken, API_URL };

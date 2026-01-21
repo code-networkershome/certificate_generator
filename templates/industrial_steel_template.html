@@ -19,7 +19,7 @@
         body {
             width: 297mm;
             height: 210mm;
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Roboto', Arial, sans-serif;
             background: #cbd5e1;
             color: #334155;
             -webkit-print-color-adjust: exact;
@@ -45,23 +45,28 @@
             width: 100%;
             height: 100%;
             border: 4mm solid #334155;
-            padding: 20mm;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
+            padding: 15mm;
             text-align: center;
+            position: relative;
+        }
+
+        .header {
+            margin-bottom: 10mm;
+        }
+
+        .logo {
+            max-height: 18mm;
+            margin-bottom: 4mm;
         }
 
         .title {
-            font-size: 36pt;
+            font-size: 34pt;
             font-weight: 900;
             color: #0f172a;
             text-transform: uppercase;
             letter-spacing: 2px;
             max-width: 250mm;
-            margin-left: auto;
-            margin-right: auto;
+            margin: 0 auto;
             word-wrap: break-word;
             overflow-wrap: break-word;
             text-align: center;
@@ -72,23 +77,19 @@
             color: #64748b;
             letter-spacing: 5px;
             text-transform: uppercase;
-            margin-top: 2mm;
+            margin-top: 3mm;
         }
 
         .body {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            width: 100%;
+            padding: 10mm 0;
         }
 
         .recipient {
-            font-size: 42pt;
+            font-size: 40pt;
             font-weight: 800;
             color: #334155;
-            margin: 8mm 0;
-            font-family: 'Arial Narrow', sans-serif;
+            margin: 10mm 0;
+            font-family: 'Arial Narrow', Arial, sans-serif;
         }
 
         .description {
@@ -96,8 +97,7 @@
             color: #64748b;
             line-height: 1.6;
             max-width: 220mm;
-            margin-left: auto;
-            margin-right: auto;
+            margin: 0 auto;
             word-wrap: break-word;
             overflow-wrap: break-word;
             text-align: center;
@@ -107,26 +107,29 @@
             font-size: 20pt;
             font-weight: bold;
             color: #0f172a;
-            margin: 4mm 0;
+            margin: 5mm 0;
             border: 2px solid #334155;
-            padding: 2mm 5mm;
+            padding: 3mm 6mm;
             display: inline-block;
         }
 
         .footer {
-            width: 100%;
-            margin-top: 10mm;
+            position: absolute;
+            bottom: 15mm;
+            left: 15mm;
+            right: 15mm;
         }
 
-        .footer table {
+        .footer-table {
             width: 100%;
             border-collapse: collapse;
         }
 
-        .footer td {
+        .footer-table td {
             vertical-align: bottom;
             text-align: center;
             width: 33.33%;
+            padding: 0 5mm;
         }
 
         .label {
@@ -150,16 +153,15 @@
             <div class="inner">
                 <div class="header">
                     {% if logo_url %}
-                    <div style="margin-bottom: 4mm;">
-                        <img src="{{logo_url}}" alt="Logo" style="max-height: 18mm;">
+                    <div>
+                        <img src="{{logo_url}}" alt="Logo" class="logo">
                     </div>
                     {% endif %}
                     <h1 class="title">{{certificate_title or "Engineering Certification"}}</h1>
                     <p class="subtitle">{{certificate_subtitle or "TECHNICAL MASTERY LOG"}}</p>
                 </div>
                 <div class="body">
-                    <p style="font-size: 13pt; color: #94a3b8; margin-top: 5mm;">This certifies the technical
-                        proficiency of</p>
+                    <p style="font-size: 13pt; color: #94a3b8;">This certifies the technical proficiency of</p>
                     <h2 class="recipient">{{student_name}}</h2>
                     <p class="description">
                         {{description_text or "having successfully navigated and completed the rigorous industrial
@@ -168,7 +170,7 @@
                     <p class="course-name">{{course_name}}</p>
                 </div>
                 <div class="footer">
-                    <table>
+                    <table class="footer-table">
                         <tr>
                             <td>
                                 <div class="footer-item">

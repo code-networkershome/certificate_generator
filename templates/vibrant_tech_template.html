@@ -19,7 +19,7 @@
         body {
             width: 297mm;
             height: 210mm;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', Arial, sans-serif;
             background: #0f172a;
             color: #fff;
             -webkit-print-color-adjust: exact;
@@ -51,20 +51,16 @@
             height: 100%;
             border: 2px solid #38bdf8;
             border-radius: 8px;
-            padding: 20mm;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
+            padding: 15mm;
             text-align: center;
         }
 
         .header {
-            margin-bottom: 5mm;
+            margin-bottom: 10mm;
         }
 
         .title {
-            font-size: 38pt;
+            font-size: 36pt;
             font-weight: 800;
             color: #38bdf8;
             text-transform: uppercase;
@@ -80,24 +76,18 @@
             font-size: 12pt;
             color: #94a3b8;
             letter-spacing: 5px;
-            margin-top: 2mm;
+            margin-top: 3mm;
         }
 
         .body {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+            padding: 10mm 0;
         }
 
         .recipient {
-            font-size: 44pt;
+            font-size: 40pt;
             font-weight: 800;
-            color: #fff;
-            margin: 6mm 0;
-            background: linear-gradient(to right, #38bdf8, #818cf8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #38bdf8;
+            margin: 10mm 0;
         }
 
         .description {
@@ -116,35 +106,103 @@
             font-size: 22pt;
             font-weight: bold;
             color: #fff;
-            margin: 4mm 0;
+            margin: 5mm 0;
         }
 
-        <div class="footer"><table style="width: 100%; border-collapse: collapse;"><tr><td style="width: 33.33%; text-align: center; vertical-align: bottom;"><div class="footer-item"><p class="value"> {
-                {
-                issue_date
-            }
+        .footer {
+            position: absolute;
+            bottom: 15mm;
+            left: 15mm;
+            right: 15mm;
         }
 
-        </p><p class="label">Timestamp</p></div></td><td style="width: 33.33%; text-align: center; vertical-align: bottom;"><div class="footer-item"> {
-            % if signature_image_url %
+        .footer-table {
+            width: 100%;
+            border-collapse: collapse;
         }
 
-        <div style="margin-bottom: 2mm;"><img src="{{signature_image_url}}" alt="Signature"
-
-        style="max-height: 12mm; filter: brightness(2);"></div> {
-            % endif %
+        .footer-table td {
+            width: 33.33%;
+            text-align: center;
+            vertical-align: bottom;
+            padding: 0 5mm;
         }
 
-        <p class="value"> {
-                {
-                signature_name
-            }
+        .footer-item {
+            text-align: center;
         }
 
-        </p><p class="label">CTO / Course Lead</p></div></td><td style="width: 33.33%; text-align: center; vertical-align: bottom;"><div class="footer-item"><p class="value"> {
-                {
-                certificate_id
-            }
+        .line {
+            border-top: 1px solid #38bdf8;
+            width: 100%;
+            margin: 2mm auto;
         }
 
-        </p><p class="label">Auth Hash</p></div></td></tr></table></div></div></div></body></html>
+        .label {
+            font-size: 9pt;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        .value {
+            font-size: 11pt;
+            font-weight: 600;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="grid-bg"></div>
+        <div class="content">
+            <div class="header">
+                <h1 class="title">{{certificate_title or "Tech Achievement"}}</h1>
+                <p class="subtitle">{{certificate_subtitle or "DIGITAL EXCELLENCE CERTIFICATION"}}</p>
+            </div>
+            <div class="body">
+                <p style="font-size: 14pt; color: #64748b;">Access granted to</p>
+                <h2 class="recipient">{{student_name}}</h2>
+                <p class="description">
+                    {{description_text or "for demonstrating exceptional technical skills and successfully completing"}}
+                </p>
+                <p class="course-name">{{course_name}}</p>
+            </div>
+            <div class="footer">
+                <table class="footer-table">
+                    <tr>
+                        <td>
+                            <div class="footer-item">
+                                <p class="value">{{issue_date}}</p>
+                                <div class="line"></div>
+                                <p class="label">Timestamp</p>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="footer-item">
+                                {% if signature_image_url %}
+                                <div style="margin-bottom: 2mm;">
+                                    <img src="{{signature_image_url}}" alt="Signature"
+                                        style="max-height: 12mm; filter: brightness(2);">
+                                </div>
+                                {% endif %}
+                                <div class="line"></div>
+                                <p class="value">{{signature_name}}</p>
+                                <p class="label">CTO / Course Lead</p>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="footer-item">
+                                <p class="value">{{certificate_id}}</p>
+                                <div class="line"></div>
+                                <p class="label">Auth Hash</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

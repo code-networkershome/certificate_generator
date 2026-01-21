@@ -19,7 +19,7 @@
         body {
             width: 297mm;
             height: 210mm;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', Arial, sans-serif;
             background: #111;
             color: #fff;
             -webkit-print-color-adjust: exact;
@@ -28,18 +28,22 @@
         .container {
             width: 297mm;
             height: 210mm;
-            padding: 25mm;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            padding: 20mm;
+            position: relative;
         }
 
         .header {
             border-bottom: 1px solid #333;
             padding-bottom: 10mm;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        }
+
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .header-table td {
+            vertical-align: middle;
         }
 
         .logo {
@@ -52,7 +56,7 @@
         }
 
         .title {
-            font-size: 32pt;
+            font-size: 30pt;
             font-weight: 200;
             letter-spacing: 5px;
             text-transform: uppercase;
@@ -69,7 +73,7 @@
         }
 
         .body {
-            margin: 20mm 0;
+            margin-top: 15mm;
         }
 
         .presented-to {
@@ -81,10 +85,10 @@
         }
 
         .recipient {
-            font-size: 46pt;
+            font-size: 42pt;
             font-weight: 800;
             color: #fff;
-            margin-bottom: 8mm;
+            margin-bottom: 10mm;
             letter-spacing: -1px;
         }
 
@@ -102,23 +106,25 @@
             font-size: 18pt;
             font-weight: 600;
             color: #fff;
-            margin-top: 4mm;
+            margin-top: 5mm;
         }
 
         .footer {
-            width: 100%;
-            margin-top: 15mm;
+            position: absolute;
+            bottom: 20mm;
+            left: 20mm;
+            right: 20mm;
         }
 
-        .footer table {
+        .footer-table {
             width: 100%;
             border-collapse: collapse;
         }
 
-        .footer td {
+        .footer-table td {
             vertical-align: bottom;
             text-align: left;
-            padding-right: 20mm;
+            padding-right: 15mm;
         }
 
         .label {
@@ -134,24 +140,38 @@
             font-weight: 400;
             color: #aaa;
         }
+
+        .line {
+            border-top: 1px solid #333;
+            width: 50mm;
+            margin-top: 1mm;
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
         <div class="header">
-            {% if logo_url %}
-            <img src="{{logo_url}}" alt="Logo" class="logo">
-            {% else %}
-            <div style="width: 15mm; height: 15mm; border: 2px solid #333;"></div>
-            {% endif %}
-            <div class="title-group">
-                <h1 class="title">{{certificate_title or "CERTIFICATION"}}</h1>
-                <p class="subtitle">{{certificate_subtitle or "OFFICIAL TRANSCRIPT"}}</p>
-            </div>
+            <table class="header-table">
+                <tr>
+                    <td style="width: 50%;">
+                        {% if logo_url %}
+                        <img src="{{logo_url}}" alt="Logo" class="logo">
+                        {% else %}
+                        <div style="width: 15mm; height: 15mm; border: 2px solid #333;"></div>
+                        {% endif %}
+                    </td>
+                    <td style="width: 50%;">
+                        <div class="title-group">
+                            <h1 class="title">{{certificate_title or "CERTIFICATION"}}</h1>
+                            <p class="subtitle">{{certificate_subtitle or "OFFICIAL TRANSCRIPT"}}</p>
+                        </div>
+                    </td>
+                </tr>
+            </table>
         </div>
         <div class="body">
-            <p class="presented-to" style="margin-top: 10mm;">Awarded to</p>
+            <p class="presented-to">Awarded to</p>
             <h2 class="recipient">{{student_name}}</h2>
             <p class="description">
                 {{description_text or "For the successful completion of the requirements for"}}
@@ -162,26 +182,26 @@
             {% endif %}
         </div>
         <div class="footer">
-            <table>
+            <table class="footer-table">
                 <tr>
                     <td>
                         <div class="footer-item">
                             <p class="value">{{issue_date}}</p>
-                            <div style="border-top: 1px solid #333; width: 40mm; margin-top: 1mm;"></div>
+                            <div class="line"></div>
                             <p class="label">Date</p>
                         </div>
                     </td>
                     <td>
                         <div class="footer-item">
                             <p class="value">{{signature_name}}</p>
-                            <div style="border-top: 1px solid #333; width: 60mm; margin-top: 1mm;"></div>
+                            <div class="line" style="width: 60mm;"></div>
                             <p class="label">{{issuing_authority}}</p>
                         </div>
                     </td>
                     <td>
                         <div class="footer-item">
                             <p class="value">{{certificate_id}}</p>
-                            <div style="border-top: 1px solid #333; width: 40mm; margin-top: 1mm;"></div>
+                            <div class="line"></div>
                             <p class="label">Record ID</p>
                         </div>
                     </td>

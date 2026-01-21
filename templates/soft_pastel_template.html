@@ -19,7 +19,7 @@
         body {
             width: 297mm;
             height: 210mm;
-            font-family: 'Quicksand', sans-serif;
+            font-family: 'Quicksand', Arial, sans-serif;
             background: #fff;
             color: #4b5563;
             -webkit-print-color-adjust: exact;
@@ -38,16 +38,18 @@
             height: 100%;
             background: #fff;
             border-radius: 40px 0 40px 0;
-            padding: 25mm;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
+            padding: 20mm;
             border: 2px solid #fee2e2;
+            text-align: center;
+            position: relative;
+        }
+
+        .header {
+            margin-bottom: 10mm;
         }
 
         .title {
-            font-size: 34pt;
+            font-size: 32pt;
             font-weight: 700;
             color: #f87171;
             margin-bottom: 4mm;
@@ -67,18 +69,14 @@
         }
 
         .body {
-            text-align: center;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+            padding: 10mm 0;
         }
 
         .recipient {
-            font-size: 40pt;
+            font-size: 38pt;
             font-weight: 700;
             color: #374151;
-            margin: 6mm 0;
+            margin: 8mm 0;
         }
 
         .description {
@@ -97,23 +95,26 @@
             font-size: 20pt;
             font-weight: bold;
             color: #fb923c;
-            margin: 4mm 0;
+            margin: 5mm 0;
         }
 
         .footer {
-            width: 100%;
-            margin-top: 10mm;
+            position: absolute;
+            bottom: 20mm;
+            left: 20mm;
+            right: 20mm;
         }
 
-        .footer table {
+        .footer-table {
             width: 100%;
             border-collapse: collapse;
         }
 
-        .footer td {
+        .footer-table td {
             vertical-align: bottom;
             text-align: center;
             width: 50%;
+            padding: 0 10mm;
         }
 
         .label {
@@ -127,6 +128,13 @@
             font-size: 11pt;
             color: #4b5563;
         }
+
+        .line {
+            height: 1px;
+            width: 40mm;
+            background: #fee2e2;
+            margin: 2mm auto;
+        }
     </style>
 </head>
 
@@ -138,7 +146,7 @@
                 <p class="subtitle">{{certificate_subtitle or "SKILLS BADGE EARNED"}}</p>
             </div>
             <div class="body">
-                <p style="font-size: 14pt; color: #9ca3af; margin-top: 5mm;">High five! This is for</p>
+                <p style="font-size: 14pt; color: #9ca3af;">High five! This is for</p>
                 <h2 class="recipient">{{student_name}}</h2>
                 <p class="description">
                     {{description_text or "for their amazing effort and the successful completion of the course module
@@ -147,7 +155,7 @@
                 <p class="course-name">{{course_name}}</p>
             </div>
             <div class="footer">
-                <table>
+                <table class="footer-table">
                     <tr>
                         <td>
                             <div class="footer-item">
@@ -158,7 +166,7 @@
                         <td>
                             <div class="footer-item">
                                 <p class="value">{{signature_name}}</p>
-                                <div style="height: 1px; width: 40mm; background: #fee2e2; margin: 2mm auto;"></div>
+                                <div class="line"></div>
                                 <p class="label">Course Lead</p>
                             </div>
                         </td>

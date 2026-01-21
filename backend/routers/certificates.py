@@ -23,7 +23,10 @@ from models import (
     BulkGenerateResponse,
     BulkCertificateResult,
     CertificateInput,
-    OutputFormat
+    OutputFormat,
+    PreviewCertificateRequest,
+    PreviewResponse,
+    FinalizePreviewRequest
 )
 from database import get_db
 from db_models import Certificate
@@ -398,3 +401,167 @@ async def get_certificate_history(
         })
     
     return {"certificates": history, "total": len(history)}
+
+
+@router.post(
+    "/preview",
+    response_model=PreviewResponse,
+    summary="Get certificate preview HTML",
+    description="Returns rendered HTML for live preview editing without saving files."
+)
+async def preview_certificate(
+    request: PreviewCertificateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: str = Depends(get_current_user)
+) -> PreviewResponse:
+    """Generate HTML preview for interactive editing."""
+    
+    # Get template
+    template = await rendering_service.get_template(db, request.template_id)
+    if not template:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Template not found"
+        )
+    
+    # Render HTML with current data
+    html_content = rendering_service.render_html(
+        template.html_content,
+        request.certificate_data
+    )
+    
+    # Inject position and style overrides if provided
+    if request.element_positions or request.element_styles:
+        html_content = _inject_editor_overrides(
+            html_content,
+            request.element_positions,
+            request.element_styles
+        )
+    
+    return PreviewResponse(
+        html=html_content,
+        template_id=str(template.id),
+        template_name=template.name
+    )
+
+
+def _inject_editor_overrides(html: str, positions: list, styles: list) -> str:
+    """Inject CSS overrides for element positions and styles."""
+    override_css = "<style id='editor-overrides'>\n"
+    
+    if positions:
+        for pos in positions:
+            override_css += f"""
+            [data-editor-id="{pos.element_id}"] {{
+                position: absolute !important;
+                left: {pos.x}px !important;
+                top: {pos.y}px !important;
+            }}
+            """
+    
+    if styles:
+        for style in styles:
+            rules = []
+            if style.font_size:
+                rules.append(f"font-size: {style.font_size} !important")
+            if style.color:
+                rules.append(f"color: {style.color} !important")
+            if style.font_weight:
+                rules.append(f"font-weight: {style.font_weight} !important")
+            if style.text_align:
+                rules.append(f"text-align: {style.text_align} !important")
+            
+            if rules:
+                override_css += f"""
+                [data-editor-id="{style.element_id}"] {{
+                    {"; ".join(rules)};
+                }}
+                """
+    
+    override_css += "</style>"
+    
+    # Inject before closing </head> or at start of HTML
+    if "</head>" in html:
+        html = html.replace("</head>", f"{override_css}\n</head>")
+    else:
+        html = override_css + html
+    
+    return html
+
+
+@router.post(
+    "/finalize",
+    response_model=GenerateCertificateResponse,
+    summary="Finalize edited certificate",
+    description="Generate final certificate files from edited preview data."
+)
+async def finalize_certificate(
+    request: FinalizePreviewRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: str = Depends(get_current_user)
+) -> GenerateCertificateResponse:
+    """Generate final certificate from edited preview."""
+    
+    # Auto-generate certificate ID if not provided
+    cert_data = dict(request.certificate_data)
+    if not cert_data.get('certificate_id'):
+        cert_data['certificate_id'] = await generate_unique_certificate_id(db)
+    else:
+        # Check uniqueness if provided
+        exists = await certificate_service.check_certificate_id_exists(
+            db,
+            cert_data['certificate_id']
+        )
+        if exists:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Certificate ID '{cert_data['certificate_id']}' already exists"
+            )
+    
+    # Get template
+    template = await rendering_service.get_template(db, request.template_id)
+    if not template:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Template not found"
+        )
+    
+    # Generate certificate with position/style overrides
+    try:
+        # First render HTML with overrides
+        html_content = rendering_service.render_html(
+            template.html_content,
+            cert_data
+        )
+        
+        # Apply position and style overrides
+        if request.element_positions or request.element_styles:
+            html_content = _inject_editor_overrides(
+                html_content,
+                request.element_positions,
+                request.element_styles
+            )
+        
+        # Generate PDF from modified HTML
+        download_urls = await certificate_service.generate_certificate_from_html(
+            db,
+            template,
+            html_content,
+            cert_data,
+            [fmt.value for fmt in request.output_formats],
+            current_user
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Certificate generation failed: {str(e)}"
+        )
+    
+    await db.commit()
+    
+    return GenerateCertificateResponse(
+        success=True,
+        certificate_id=cert_data['certificate_id'],
+        download_urls=download_urls,
+        generated_at=datetime.now(timezone.utc)
+    )

@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from routers import auth, templates, certificates
+from routers import auth, templates, certificates, uploads
 from database import init_db, close_db
 from config import get_settings
 
@@ -25,6 +25,7 @@ async def lifespan(app: FastAPI):
     # Create storage directory
     Path(settings.STORAGE_PATH).mkdir(parents=True, exist_ok=True)
     Path(settings.TEMPLATES_PATH).mkdir(parents=True, exist_ok=True)
+    Path(settings.STORAGE_PATH + "/uploads").mkdir(parents=True, exist_ok=True)
     
     print("Certificate Generation System started")
     
@@ -60,12 +61,18 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(templates.router)
 app.include_router(certificates.router)
+app.include_router(uploads.router)
 
 
 # Static files for downloads
 storage_path = Path(settings.STORAGE_PATH)
 storage_path.mkdir(parents=True, exist_ok=True)
 app.mount("/downloads", StaticFiles(directory=str(storage_path)), name="downloads")
+
+# Static files for uploads (logos, signatures)
+uploads_path = storage_path / "uploads"
+uploads_path.mkdir(parents=True, exist_ok=True)
+app.mount("/storage/uploads", StaticFiles(directory=str(uploads_path)), name="uploads")
 
 
 # Health Check

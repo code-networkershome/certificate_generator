@@ -1,0 +1,36 @@
+# Render.com Blueprint
+# Deploy with: render blueprint apply
+
+services:
+  # Backend API Service
+  - type: web
+    name: certificate-builder-api
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: |
+      cd backend
+      pip install -r requirements.txt
+    startCommand: |
+      cd backend
+      chmod +x start.sh
+      ./start.sh
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: certificate-db
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false
+      - key: STORAGE_PATH
+        value: /tmp/storage
+      - key: TEMPLATES_PATH
+        value: ./templates
+
+# PostgreSQL Database
+databases:
+  - name: certificate-db
+    plan: free
+    region: oregon

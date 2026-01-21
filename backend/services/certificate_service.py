@@ -61,10 +61,16 @@ class RenderingService:
         template = self.jinja_env.from_string(html_content)
         
         # Prepare data with image handling
+        # Pass both logo_url and logo_image for template compatibility
+        logo_value = data.get('logo_url') or None
+        signature_value = data.get('signature_image_url') or None
+        
         render_data = {
             **data,
-            'logo_image': data.get('logo_url'),
-            'signature_image': data.get('signature_image_url')
+            'logo_url': logo_value,
+            'logo_image': logo_value,
+            'signature_image': signature_value,
+            'signature_image_url': signature_value
         }
         
         return template.render(**render_data)
@@ -194,6 +200,56 @@ class CertificateService:
         )
         
         # Generate PDF
+        pdf_bytes = self.rendering.render_pdf(html_content, template.css_content)
+        
+        download_urls = {}
+        paths = {}
+        
+        cert_id = certificate_data['certificate_id']
+        
+        for fmt in output_formats:
+            if fmt.lower() == 'pdf':
+                file_bytes = pdf_bytes
+            else:
+                file_bytes = self.rendering.convert_to_image(pdf_bytes, fmt)
+            
+            # Save file
+            relative_path = self.storage.save_file(file_bytes, cert_id, fmt)
+            paths[fmt] = relative_path
+            download_urls[fmt] = self.storage.get_download_url(relative_path)
+        
+        # Save certificate record
+        user_uuid = uuid.UUID(user_id) if user_id else None
+        
+        certificate = Certificate(
+            certificate_id=cert_id,
+            user_id=user_uuid,
+            template_id=template.id,
+            certificate_data=certificate_data,
+            pdf_path=paths.get('pdf'),
+            png_path=paths.get('png'),
+            jpg_path=paths.get('jpg') or paths.get('jpeg'),
+            status='generated',
+            generated_at=datetime.now(timezone.utc)
+        )
+        db.add(certificate)
+        
+        return download_urls
+
+    async def generate_certificate_from_html(
+        self,
+        db: AsyncSession,
+        template: Template,
+        html_content: str,
+        certificate_data: dict,
+        output_formats: List[str],
+        user_id: Optional[str] = None
+    ) -> Dict[str, str]:
+        """
+        Generate certificate from pre-rendered HTML.
+        Used for finalized previews with position/style overrides already applied.
+        """
+        # Generate PDF from provided HTML
         pdf_bytes = self.rendering.render_pdf(html_content, template.css_content)
         
         download_urls = {}

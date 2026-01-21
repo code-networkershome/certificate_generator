@@ -39,7 +39,7 @@ class SendOTPRequest(BaseModel):
     """Request model for sending OTP"""
     otp_type: OTPType
     email: Optional[EmailStr] = None
-    phone: Optional[str] = Field(None, pattern=r'^\+?[1-9]\d{6,14}$')
+    phone: Optional[str] = Field(None, pattern=r'^\+?[0-9]{7,15}$')
 
     class Config:
         json_schema_extra = {
@@ -61,7 +61,7 @@ class VerifyOTPRequest(BaseModel):
     """Request model for OTP verification"""
     otp_type: OTPType
     email: Optional[EmailStr] = None
-    phone: Optional[str] = Field(None, pattern=r'^\+?[1-9]\d{6,14}$')
+    phone: Optional[str] = Field(None, pattern=r'^\+?[0-9]{7,15}$')
     otp_code: str = Field(..., min_length=6, max_length=6)
 
 
@@ -190,3 +190,43 @@ class ValidationErrorResponse(BaseModel):
     """Validation error response"""
     error: str = "Validation Error"
     details: List[dict[str, Any]]
+
+
+# ============================================
+# PREVIEW/EDITOR MODELS
+# ============================================
+
+class ElementPosition(BaseModel):
+    """Position override for a dragged element"""
+    element_id: str
+    x: float  # pixels from left
+    y: float  # pixels from top
+
+class ElementStyle(BaseModel):
+    """Style override for an element"""
+    element_id: str
+    font_size: Optional[str] = None  # e.g. "24px"
+    color: Optional[str] = None  # e.g. "#ff0000"
+    font_weight: Optional[str] = None  # e.g. "bold"
+    text_align: Optional[str] = None  # e.g. "center"
+
+class PreviewCertificateRequest(BaseModel):
+    """Request model for certificate preview (no file generation)"""
+    template_id: str
+    certificate_data: dict  # Flexible dict for partial data during editing
+    element_positions: Optional[List[ElementPosition]] = None
+    element_styles: Optional[List[ElementStyle]] = None
+
+class PreviewResponse(BaseModel):
+    """Response model with rendered HTML for preview"""
+    html: str
+    template_id: str
+    template_name: str
+
+class FinalizePreviewRequest(BaseModel):
+    """Request to generate final certificate from edited preview"""
+    template_id: str
+    certificate_data: dict
+    element_positions: Optional[List[ElementPosition]] = None
+    element_styles: Optional[List[ElementStyle]] = None
+    output_formats: List[OutputFormat] = [OutputFormat.PDF]

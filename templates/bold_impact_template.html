@@ -19,7 +19,7 @@
         body {
             width: 297mm;
             height: 210mm;
-            font-family: 'Arial Black', sans-serif;
+            font-family: 'Arial Black', Arial, sans-serif;
             background: #000;
             color: #fff;
             -webkit-print-color-adjust: exact;
@@ -29,22 +29,27 @@
             width: 297mm;
             height: 210mm;
             padding: 10mm;
-            display: flex;
-            flex-direction: column;
             border: 15px solid #fff;
+            position: relative;
         }
 
         .header {
             background: #fff;
             color: #000;
             padding: 10mm;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        }
+
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .header-table td {
+            vertical-align: middle;
         }
 
         .title {
-            font-size: 50pt;
+            font-size: 48pt;
             font-weight: 900;
             line-height: 1;
             max-width: 200mm;
@@ -60,18 +65,14 @@
         }
 
         .body {
-            flex-grow: 1;
             padding: 15mm;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
         }
 
         .recipient {
-            font-size: 64pt;
+            font-size: 58pt;
             font-weight: 900;
             color: #fff;
-            margin: 5mm 0;
+            margin: 8mm 0;
             letter-spacing: -4px;
         }
 
@@ -86,18 +87,21 @@
         }
 
         .course-name {
-            font-size: 24pt;
+            font-size: 22pt;
             font-weight: bold;
             color: #fff;
             margin-top: 5mm;
             text-transform: uppercase;
             background: #333;
-            padding: 2mm 5mm;
+            padding: 3mm 6mm;
             display: inline-block;
         }
 
         .footer {
-            margin-top: 10mm;
+            position: absolute;
+            bottom: 10mm;
+            left: 10mm;
+            right: 10mm;
             padding: 10mm;
             border-top: 1px solid #333;
         }
@@ -110,7 +114,6 @@
         .footer-table td {
             width: 33.33%;
             vertical-align: bottom;
-            text-align: center;
         }
 
         .label {
@@ -130,10 +133,18 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1 class="title">{{certificate_title or "LEVEL UP!"}}</h1>
-            {% if logo_url %}
-            <img src="{{logo_url}}" alt="Logo" style="max-height: 20mm; filter: grayscale(1);">
-            {% endif %}
+            <table class="header-table">
+                <tr>
+                    <td style="width: 70%;">
+                        <h1 class="title">{{certificate_title or "LEVEL UP!"}}</h1>
+                    </td>
+                    <td style="width: 30%; text-align: right;">
+                        {% if logo_url %}
+                        <img src="{{logo_url}}" alt="Logo" style="max-height: 20mm; filter: grayscale(1);">
+                        {% endif %}
+                    </td>
+                </tr>
+            </table>
         </div>
         <div class="body">
             <p style="font-size: 14pt; color: #555;">ACHIEVED BY</p>
@@ -152,7 +163,7 @@
                             <p class="label">Date Logged</p>
                         </div>
                     </td>
-                    <td>
+                    <td style="text-align: center;">
                         <div class="footer-item">
                             <p class="value">{{certificate_id}}</p>
                             <p class="label">System ID</p>

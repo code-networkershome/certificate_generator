@@ -19,7 +19,7 @@
         body {
             width: 297mm;
             height: 210mm;
-            font-family: 'Helvetica', sans-serif;
+            font-family: 'Helvetica', Arial, sans-serif;
             background: #fff;
             color: #333;
             -webkit-print-color-adjust: exact;
@@ -63,14 +63,16 @@
         .content {
             width: 100%;
             height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
+            text-align: center;
+            position: relative;
+        }
+
+        .header {
+            margin-bottom: 15mm;
         }
 
         .title {
-            font-size: 48pt;
+            font-size: 44pt;
             font-weight: 900;
             color: #1e293b;
             letter-spacing: -2px;
@@ -87,22 +89,19 @@
             color: #64748b;
             text-transform: uppercase;
             letter-spacing: 4px;
-            margin-top: 2mm;
+            margin-top: 3mm;
         }
 
         .body {
             text-align: center;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+            padding: 10mm 0;
         }
 
         .recipient {
-            font-size: 42pt;
+            font-size: 40pt;
             font-weight: bold;
             color: #0f172a;
-            margin: 8mm 0;
+            margin: 10mm 0;
         }
 
         .description {
@@ -121,48 +120,100 @@
             font-size: 22pt;
             font-weight: bold;
             color: #334155;
-            margin-top: 4mm;
+            margin-top: 5mm;
         }
 
-        .badge {
-            width: 30mm;
-            height: 30mm;
-            background: #1e293b;
-            color: #fff;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 8pt;
+        .footer {
+            position: absolute;
+            bottom: 10mm;
+            left: 15mm;
+            right: 15mm;
+        }
+
+        .footer-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .footer-table td {
+            width: 50%;
             text-align: center;
-            font-weight: bold;
-            margin: 5mm 0;
+            vertical-align: bottom;
+            padding: 0 10mm;
         }
 
-        <div class="footer"><table style="width: 100%; border-collapse: collapse;"><tr><td style="width: 50%; text-align: center; vertical-align: bottom;"><div class="footer-item"><p class="value"> {
-                {
-                issue_date
-            }
+        .footer-item {
+            text-align: center;
         }
 
-        </p><div class="sig-line" style="margin: 2mm auto 0 auto;"></div><p class="label">Date Issued</p></div></td><td style="width: 50%; text-align: center; vertical-align: bottom;"><div class="footer-item"> {
-            % if signature_image_url %
+        .sig-line {
+            border-top: 2px solid #1e293b;
+            width: 100%;
+            margin: 2mm auto;
         }
 
-        <div style="margin-bottom: 2mm;"><img src="{{signature_image_url}}" alt="Signature" style="max-height: 12mm;"></div> {
-            % endif %
+        .label {
+            font-size: 9pt;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        <div class="sig-line" style="margin: 0 auto;"></div><p class="value"> {
-                {
-                signature_name
-            }
+        .value {
+            font-size: 12pt;
+            font-weight: 600;
+            color: #1e293b;
         }
+    </style>
+</head>
 
-        </p><p class="label"> {
-                {
-                issuing_authority
-            }
-        }
+<body>
+    <div class="container">
+        <div class="border-main">
+            <div class="accent-corner corner-tl"></div>
+            <div class="accent-corner corner-br"></div>
+            <div class="content">
+                <div class="header">
+                    <h1 class="title">{{certificate_title or "Professional Certification"}}</h1>
+                    <p class="subtitle">{{certificate_subtitle or "EXCELLENCE IN CORPORATE TRAINING"}}</p>
+                </div>
+                <div class="body">
+                    <p style="font-size: 14pt; color: #475569;">This is to certify that</p>
+                    <h2 class="recipient">{{student_name}}</h2>
+                    <p class="description">
+                        {{description_text or "has demonstrated exceptional professional competence and successfully
+                        completed all requirements for"}}
+                    </p>
+                    <p class="course-name">{{course_name}}</p>
+                </div>
+                <div class="footer">
+                    <table class="footer-table">
+                        <tr>
+                            <td>
+                                <div class="footer-item">
+                                    <p class="value">{{issue_date}}</p>
+                                    <div class="sig-line"></div>
+                                    <p class="label">Date Issued</p>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="footer-item">
+                                    {% if signature_image_url %}
+                                    <div style="margin-bottom: 2mm;">
+                                        <img src="{{signature_image_url}}" alt="Signature" style="max-height: 12mm;">
+                                    </div>
+                                    {% endif %}
+                                    <div class="sig-line"></div>
+                                    <p class="value">{{signature_name}}</p>
+                                    <p class="label">{{issuing_authority}}</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
 
-        </p></div></td></tr></table></div></div></div></div></body></html>
+</html>

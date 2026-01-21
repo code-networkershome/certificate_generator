@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { authAPI, templatesAPI, certificatesAPI } from './api';
+import { authAPI, templatesAPI, certificatesAPI, uploadsAPI, API_URL } from './api';
+import CertificateEditor from './components/CertificateEditor';
 
 // ============================================
 // AUTH CONTEXT
@@ -277,6 +278,9 @@ function GeneratePage() {
     const [showHistory, setShowHistory] = useState(false);
     const [history, setHistory] = useState([]);
     const [historyLoading, setHistoryLoading] = useState(false);
+    const [selectedTemplateName, setSelectedTemplateName] = useState('');
+    const [showEditor, setShowEditor] = useState(false);
+    const [uploading, setUploading] = useState({ logo: false, signature: false });
 
     useEffect(() => {
         loadTemplates();
@@ -322,6 +326,92 @@ function GeneratePage() {
         );
     };
 
+    const handleFileUpload = async (e, fieldName, uploadType) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setUploading(prev => ({ ...prev, [uploadType]: true }));
+        setError('');
+
+        try {
+            const result = await uploadsAPI.uploadImage(file);
+            // Set the full URL including the API base
+            const fullUrl = `${API_URL}${result.url}`;
+            setFormData(prev => ({ ...prev, [fieldName]: fullUrl }));
+        } catch (err) {
+            setError(`Failed to upload ${uploadType}: ${err.message}`);
+        } finally {
+            setUploading(prev => ({ ...prev, [uploadType]: false }));
+        }
+    };
+
+    const handlePreviewEdit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setJsonError('');
+
+        let dataToSubmit = formData;
+
+        // If in JSON mode, parse the JSON input
+        if (inputMode === 'json') {
+            try {
+                const parsed = JSON.parse(jsonInput);
+
+                // Validate required fields (certificate_id is auto-generated)
+                const requiredFields = ['student_name', 'course_name', 'issue_date', 'issuing_authority'];
+                const missingFields = requiredFields.filter(field => !parsed[field]);
+
+                if (missingFields.length > 0) {
+                    throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+                }
+
+                dataToSubmit = parsed;
+                setFormData(parsed);
+            } catch (parseError) {
+                setJsonError(parseError.message);
+                return;
+            }
+        }
+
+        // Find template name
+        const template = templates.find(t => t.id === selectedTemplate);
+        setSelectedTemplateName(template?.name || 'Certificate');
+
+        // Open editor
+        setShowEditor(true);
+    };
+
+    const handleEditorDataChange = (newData) => {
+        setFormData(newData);
+    };
+
+    const handleEditorFinalize = async (data, positions, styles) => {
+        setLoading(true);
+        setError('');
+
+        try {
+            const response = await certificatesAPI.finalize(
+                selectedTemplate,
+                data,
+                positions,
+                styles,
+                outputFormats
+            );
+            setResult(response);
+            setShowEditor(false);
+            setStep(3);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleEditorBack = () => {
+        setShowEditor(false);
+    };
+
+    // Original direct generate (still available via form submit)
     const handleGenerate = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -388,283 +478,335 @@ function GeneratePage() {
 
             <main className="main-content">
                 <div className="container">
-                    {/* Steps Indicator */}
-                    <div className="steps">
-                        <div className={`step ${step >= 1 ? 'active' : ''} ${step > 1 ? 'completed' : ''}`}>
-                            <span className="step-number">1</span>
-                            <span className="step-label">Select Template</span>
-                        </div>
-                        <div className="step-connector" />
-                        <div className={`step ${step >= 2 ? 'active' : ''} ${step > 2 ? 'completed' : ''}`}>
-                            <span className="step-number">2</span>
-                            <span className="step-label">Enter Details</span>
-                        </div>
-                        <div className="step-connector" />
-                        <div className={`step ${step >= 3 ? 'active' : ''}`}>
-                            <span className="step-number">3</span>
-                            <span className="step-label">Download</span>
-                        </div>
-                    </div>
-
-                    {error && <div className="alert alert-error">{error}</div>}
-
-                    {/* Step 1: Template Selection */}
-                    {step === 1 && (
-                        <div>
-                            <h2 className="text-center mb-xl">Choose a Template</h2>
-                            <div className="template-section">
-                                <div className="template-grid">
-                                    {templates.map(template => (
-                                        <div
-                                            key={template.id}
-                                            className={`card template-card ${selectedTemplate === template.id ? 'selected' : ''}`}
-                                            onClick={() => setSelectedTemplate(template.id)}
-                                        >
-                                            <div className="template-preview">
-                                                {template.thumbnail_url ? (
-                                                    <img
-                                                        src={`http://localhost:8000${template.thumbnail_url}`}
-                                                        alt={template.name}
-                                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                                    />
-                                                ) : (
-                                                    <span>Preview</span>
-                                                )}
-                                            </div>
-                                            <h3 className="template-name">{template.name}</h3>
-                                            <p className="template-description">{template.description}</p>
-                                        </div>
-                                    ))}
+                    {/* Certificate Editor - Shown when editing */}
+                    {showEditor ? (
+                        <CertificateEditor
+                            templateId={selectedTemplate}
+                            templateName={selectedTemplateName}
+                            certificateData={formData}
+                            onDataChange={handleEditorDataChange}
+                            onFinalize={handleEditorFinalize}
+                            onBack={handleEditorBack}
+                        />
+                    ) : (
+                        <>
+                            {/* Steps Indicator */}
+                            <div className="steps">
+                                <div className={`step ${step >= 1 ? 'active' : ''} ${step > 1 ? 'completed' : ''}`}>
+                                    <span className="step-number">1</span>
+                                    <span className="step-label">Select Template</span>
+                                </div>
+                                <div className="step-connector" />
+                                <div className={`step ${step >= 2 ? 'active' : ''} ${step > 2 ? 'completed' : ''}`}>
+                                    <span className="step-number">2</span>
+                                    <span className="step-label">Enter Details</span>
+                                </div>
+                                <div className="step-connector" />
+                                <div className={`step ${step >= 3 ? 'active' : ''}`}>
+                                    <span className="step-number">3</span>
+                                    <span className="step-label">Download</span>
                                 </div>
                             </div>
 
-                            <div className="text-center mt-xl">
-                                <button
-                                    className="btn btn-primary btn-lg"
-                                    onClick={() => setStep(2)}
-                                    disabled={!selectedTemplate}
-                                >
-                                    Next: Enter Details
-                                </button>
-                            </div>
-                        </div>
-                    )}
+                            {error && <div className="alert alert-error">{error}</div>}
 
-                    {/* Step 2: Certificate Details */}
-                    {step === 2 && (
-                        <div className="card" style={{ maxWidth: '800px', margin: '0 auto' }}>
-                            <h2 className="mb-md">Certificate Details</h2>
-
-                            {/* Input Mode Tabs */}
-                            <div className="auth-tabs mb-xl">
-                                <button
-                                    type="button"
-                                    className={`auth-tab ${inputMode === 'form' ? 'active' : ''}`}
-                                    onClick={() => setInputMode('form')}
-                                >
-                                    📝 Form
-                                </button>
-                                <button
-                                    type="button"
-                                    className={`auth-tab ${inputMode === 'json' ? 'active' : ''}`}
-                                    onClick={() => setInputMode('json')}
-                                >
-                                    { } JSON
-                                </button>
-                            </div>
-
-                            <form onSubmit={handleGenerate}>
-                                {inputMode === 'form' ? (
-                                    /* Form Input Mode */
-                                    <div className="certificate-form">
-                                        <div className="form-group">
-                                            <label className="form-label">Student Name *</label>
-                                            <input
-                                                type="text"
-                                                name="student_name"
-                                                className="form-input"
-                                                placeholder="John Doe"
-                                                value={formData.student_name}
-                                                onChange={handleInputChange}
-                                                required
-                                            />
-                                        </div>
-
-                                        <div className="form-group">
-                                            <label className="form-label">Course Name *</label>
-                                            <input
-                                                type="text"
-                                                name="course_name"
-                                                className="form-input"
-                                                placeholder="AWS Cloud Practitioner"
-                                                value={formData.course_name}
-                                                onChange={handleInputChange}
-                                                required
-                                            />
-                                        </div>
-
-                                        <div className="form-group">
-                                            <label className="form-label">Issue Date *</label>
-                                            <input
-                                                type="date"
-                                                name="issue_date"
-                                                className="form-input"
-                                                value={formData.issue_date}
-                                                onChange={handleInputChange}
-                                                required
-                                            />
-                                        </div>
-
-                                        <div className="form-group">
-                                            <label className="form-label">Certificate ID *</label>
-                                            <div className="flex gap-sm">
-                                                <input
-                                                    type="text"
-                                                    name="certificate_id"
-                                                    className="form-input"
-                                                    placeholder="NH-2026-00123"
-                                                    value={formData.certificate_id}
-                                                    onChange={handleInputChange}
-                                                    required
-                                                />
-                                                <button
-                                                    type="button"
-                                                    className="btn btn-secondary"
-                                                    onClick={generateCertificateId}
+                            {/* Step 1: Template Selection */}
+                            {step === 1 && (
+                                <div>
+                                    <h2 className="text-center mb-xl">Choose a Template</h2>
+                                    <div className="template-section">
+                                        <div className="template-grid">
+                                            {templates.map(template => (
+                                                <div
+                                                    key={template.id}
+                                                    className={`card template-card ${selectedTemplate === template.id ? 'selected' : ''}`}
+                                                    onClick={() => setSelectedTemplate(template.id)}
                                                 >
-                                                    Generate
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        <div className="form-group full-width">
-                                            <label className="form-label">Issuing Authority *</label>
-                                            <input
-                                                type="text"
-                                                name="issuing_authority"
-                                                className="form-input"
-                                                placeholder="NetworkersHome"
-                                                value={formData.issuing_authority}
-                                                onChange={handleInputChange}
-                                                required
-                                            />
-                                        </div>
-
-                                        <div className="form-group">
-                                            <label className="form-label">Certificate Title</label>
-                                            <input
-                                                type="text"
-                                                name="certificate_title"
-                                                className="form-input"
-                                                placeholder="Certificate of Completion"
-                                                value={formData.certificate_title}
-                                                onChange={handleInputChange}
-                                            />
-                                        </div>
-
-                                        <div className="form-group">
-                                            <label className="form-label">Certificate Subtitle</label>
-                                            <input
-                                                type="text"
-                                                name="certificate_subtitle"
-                                                className="form-input"
-                                                placeholder="Professional Development"
-                                                value={formData.certificate_subtitle}
-                                                onChange={handleInputChange}
-                                            />
-                                        </div>
-
-                                        <div className="form-group full-width">
-                                            <label className="form-label">Description Text</label>
-                                            <textarea
-                                                name="description_text"
-                                                className="form-input"
-                                                placeholder="has successfully completed all requirements for"
-                                                value={formData.description_text}
-                                                onChange={handleInputChange}
-                                                rows={2}
-                                            />
-                                        </div>
-
-                                        <div className="form-group">
-                                            <label className="form-label">Signature Name</label>
-                                            <input
-                                                type="text"
-                                                name="signature_name"
-                                                className="form-input"
-                                                placeholder="Director"
-                                                value={formData.signature_name}
-                                                onChange={handleInputChange}
-                                            />
-                                        </div>
-
-                                        <div className="form-group">
-                                            <label className="form-label">Signature Image URL</label>
-                                            <input
-                                                type="url"
-                                                name="signature_image_url"
-                                                className="form-input"
-                                                placeholder="https://example.com/signature.png"
-                                                value={formData.signature_image_url}
-                                                onChange={handleInputChange}
-                                            />
-                                        </div>
-
-                                        <div className="form-group full-width">
-                                            <label className="form-label">Logo URL</label>
-                                            <input
-                                                type="url"
-                                                name="logo_url"
-                                                className="form-input"
-                                                placeholder="https://example.com/logo.png"
-                                                value={formData.logo_url}
-                                                onChange={handleInputChange}
-                                            />
-                                        </div>
-
-                                        <div className="form-group full-width">
-                                            <label className="form-label">Custom Description (Optional)</label>
-                                            <textarea
-                                                name="custom_body"
-                                                className="form-input"
-                                                placeholder="Add custom text to appear on the certificate (e.g., 'for exceptional leadership and dedication')"
-                                                value={formData.custom_body}
-                                                onChange={handleInputChange}
-                                                rows={2}
-                                                style={{ resize: 'vertical' }}
-                                            />
-                                        </div>
-
-                                        <div className="form-group full-width">
-                                            <label className="form-label">Output Formats</label>
-                                            <div className="flex gap-md">
-                                                {['pdf', 'png', 'jpg'].map(format => (
-                                                    <label key={format} className="flex items-center gap-sm" style={{ cursor: 'pointer' }}>
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={outputFormats.includes(format)}
-                                                            onChange={() => handleFormatToggle(format)}
-                                                        />
-                                                        {format.toUpperCase()}
-                                                    </label>
-                                                ))}
-                                            </div>
+                                                    <div className="template-preview">
+                                                        {template.thumbnail_url ? (
+                                                            <img
+                                                                src={`${API_URL}${template.thumbnail_url}`}
+                                                                alt={template.name}
+                                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                            />
+                                                        ) : (
+                                                            <span>Preview</span>
+                                                        )}
+                                                    </div>
+                                                    <h3 className="template-name">{template.name}</h3>
+                                                    <p className="template-description">{template.description}</p>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
-                                ) : (
-                                    /* JSON Input Mode */
-                                    <div>
-                                        <div className="form-group">
-                                            <label className="form-label">Paste JSON Data</label>
-                                            <textarea
-                                                className="form-input"
-                                                style={{
-                                                    minHeight: '280px',
-                                                    fontFamily: 'monospace',
-                                                    fontSize: '13px',
-                                                    lineHeight: '1.5'
-                                                }}
-                                                placeholder={`{
+
+                                    <div className="text-center mt-xl">
+                                        <button
+                                            className="btn btn-primary btn-lg"
+                                            onClick={() => setStep(2)}
+                                            disabled={!selectedTemplate}
+                                        >
+                                            Next: Enter Details
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Step 2: Certificate Details */}
+                            {step === 2 && (
+                                <div className="card" style={{ maxWidth: '800px', margin: '0 auto' }}>
+                                    <h2 className="mb-md">Certificate Details</h2>
+
+                                    {/* Input Mode Tabs */}
+                                    <div className="auth-tabs mb-xl">
+                                        <button
+                                            type="button"
+                                            className={`auth-tab ${inputMode === 'form' ? 'active' : ''}`}
+                                            onClick={() => setInputMode('form')}
+                                        >
+                                            📝 Form
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={`auth-tab ${inputMode === 'json' ? 'active' : ''}`}
+                                            onClick={() => setInputMode('json')}
+                                        >
+                                            { } JSON
+                                        </button>
+                                    </div>
+
+                                    <form onSubmit={handleGenerate}>
+                                        {inputMode === 'form' ? (
+                                            /* Form Input Mode */
+                                            <div className="certificate-form">
+                                                <div className="form-group">
+                                                    <label className="form-label">Student Name *</label>
+                                                    <input
+                                                        type="text"
+                                                        name="student_name"
+                                                        className="form-input"
+                                                        placeholder="John Doe"
+                                                        value={formData.student_name}
+                                                        onChange={handleInputChange}
+                                                        required
+                                                    />
+                                                </div>
+
+                                                <div className="form-group">
+                                                    <label className="form-label">Course Name *</label>
+                                                    <input
+                                                        type="text"
+                                                        name="course_name"
+                                                        className="form-input"
+                                                        placeholder="AWS Cloud Practitioner"
+                                                        value={formData.course_name}
+                                                        onChange={handleInputChange}
+                                                        required
+                                                    />
+                                                </div>
+
+                                                <div className="form-group">
+                                                    <label className="form-label">Issue Date *</label>
+                                                    <input
+                                                        type="date"
+                                                        name="issue_date"
+                                                        className="form-input"
+                                                        value={formData.issue_date}
+                                                        onChange={handleInputChange}
+                                                        required
+                                                    />
+                                                </div>
+
+                                                <div className="form-group">
+                                                    <label className="form-label">Certificate ID *</label>
+                                                    <div className="flex gap-sm">
+                                                        <input
+                                                            type="text"
+                                                            name="certificate_id"
+                                                            className="form-input"
+                                                            placeholder="NH-2026-00123"
+                                                            value={formData.certificate_id}
+                                                            onChange={handleInputChange}
+                                                            required
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-secondary"
+                                                            onClick={generateCertificateId}
+                                                        >
+                                                            Generate
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <div className="form-group full-width">
+                                                    <label className="form-label">Issuing Authority *</label>
+                                                    <input
+                                                        type="text"
+                                                        name="issuing_authority"
+                                                        className="form-input"
+                                                        placeholder="NetworkersHome"
+                                                        value={formData.issuing_authority}
+                                                        onChange={handleInputChange}
+                                                        required
+                                                    />
+                                                </div>
+
+                                                <div className="form-group">
+                                                    <label className="form-label">Certificate Title</label>
+                                                    <input
+                                                        type="text"
+                                                        name="certificate_title"
+                                                        className="form-input"
+                                                        placeholder="Certificate of Completion"
+                                                        value={formData.certificate_title}
+                                                        onChange={handleInputChange}
+                                                    />
+                                                </div>
+
+                                                <div className="form-group">
+                                                    <label className="form-label">Certificate Subtitle</label>
+                                                    <input
+                                                        type="text"
+                                                        name="certificate_subtitle"
+                                                        className="form-input"
+                                                        placeholder="Professional Development"
+                                                        value={formData.certificate_subtitle}
+                                                        onChange={handleInputChange}
+                                                    />
+                                                </div>
+
+                                                <div className="form-group full-width">
+                                                    <label className="form-label">Description Text</label>
+                                                    <textarea
+                                                        name="description_text"
+                                                        className="form-input"
+                                                        placeholder="has successfully completed all requirements for"
+                                                        value={formData.description_text}
+                                                        onChange={handleInputChange}
+                                                        rows={2}
+                                                    />
+                                                </div>
+
+                                                <div className="form-group">
+                                                    <label className="form-label">Signature Name</label>
+                                                    <input
+                                                        type="text"
+                                                        name="signature_name"
+                                                        className="form-input"
+                                                        placeholder="Director"
+                                                        value={formData.signature_name}
+                                                        onChange={handleInputChange}
+                                                    />
+                                                </div>
+
+                                                <div className="form-group">
+                                                    <label className="form-label">Signature Image</label>
+                                                    <div className="upload-group">
+                                                        <input
+                                                            type="url"
+                                                            name="signature_image_url"
+                                                            className="form-input"
+                                                            placeholder="https://example.com/signature.png"
+                                                            value={formData.signature_image_url}
+                                                            onChange={handleInputChange}
+                                                        />
+                                                        <span className="upload-divider">or</span>
+                                                        <label className="btn btn-secondary btn-upload">
+                                                            {uploading.signature ? '⏳ Uploading...' : '📁 Upload'}
+                                                            <input
+                                                                type="file"
+                                                                accept="image/*"
+                                                                onChange={(e) => handleFileUpload(e, 'signature_image_url', 'signature')}
+                                                                style={{ display: 'none' }}
+                                                                disabled={uploading.signature}
+                                                            />
+                                                        </label>
+                                                    </div>
+                                                    {formData.signature_image_url && (
+                                                        <img
+                                                            src={formData.signature_image_url}
+                                                            alt="Signature preview"
+                                                            className="image-preview"
+                                                        />
+                                                    )}
+                                                </div>
+
+                                                <div className="form-group full-width">
+                                                    <label className="form-label">Logo Image</label>
+                                                    <div className="upload-group">
+                                                        <input
+                                                            type="url"
+                                                            name="logo_url"
+                                                            className="form-input"
+                                                            placeholder="https://example.com/logo.png"
+                                                            value={formData.logo_url}
+                                                            onChange={handleInputChange}
+                                                        />
+                                                        <span className="upload-divider">or</span>
+                                                        <label className="btn btn-secondary btn-upload">
+                                                            {uploading.logo ? '⏳ Uploading...' : '📁 Upload'}
+                                                            <input
+                                                                type="file"
+                                                                accept="image/*"
+                                                                onChange={(e) => handleFileUpload(e, 'logo_url', 'logo')}
+                                                                style={{ display: 'none' }}
+                                                                disabled={uploading.logo}
+                                                            />
+                                                        </label>
+                                                    </div>
+                                                    {formData.logo_url && (
+                                                        <img
+                                                            src={formData.logo_url}
+                                                            alt="Logo preview"
+                                                            className="image-preview"
+                                                        />
+                                                    )}
+                                                </div>
+
+                                                <div className="form-group full-width">
+                                                    <label className="form-label">Custom Description (Optional)</label>
+                                                    <textarea
+                                                        name="custom_body"
+                                                        className="form-input"
+                                                        placeholder="Add custom text to appear on the certificate (e.g., 'for exceptional leadership and dedication')"
+                                                        value={formData.custom_body}
+                                                        onChange={handleInputChange}
+                                                        rows={2}
+                                                        style={{ resize: 'vertical' }}
+                                                    />
+                                                </div>
+
+                                                <div className="form-group full-width">
+                                                    <label className="form-label">Output Formats</label>
+                                                    <div className="flex gap-md">
+                                                        {['pdf', 'png', 'jpg'].map(format => (
+                                                            <label key={format} className="flex items-center gap-sm" style={{ cursor: 'pointer' }}>
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={outputFormats.includes(format)}
+                                                                    onChange={() => handleFormatToggle(format)}
+                                                                />
+                                                                {format.toUpperCase()}
+                                                            </label>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            /* JSON Input Mode */
+                                            <div>
+                                                <div className="form-group">
+                                                    <label className="form-label">Paste JSON Data</label>
+                                                    <textarea
+                                                        className="form-input"
+                                                        style={{
+                                                            minHeight: '280px',
+                                                            fontFamily: 'monospace',
+                                                            fontSize: '13px',
+                                                            lineHeight: '1.5'
+                                                        }}
+                                                        placeholder={`{
   "student_name": "John Doe",
   "course_name": "AWS Cloud Practitioner",
   "issue_date": "2026-01-20",
@@ -672,106 +814,113 @@ function GeneratePage() {
   "signature_name": "Director",
   "custom_body": "for outstanding performance"
 }`}
-                                                value={jsonInput}
-                                                onChange={(e) => setJsonInput(e.target.value)}
-                                            />
-                                            {jsonError && (
-                                                <p style={{ color: '#ef4444', marginTop: '8px', fontSize: '14px' }}>
-                                                    ⚠️ {jsonError}
-                                                </p>
-                                            )}
-                                        </div>
+                                                        value={jsonInput}
+                                                        onChange={(e) => setJsonInput(e.target.value)}
+                                                    />
+                                                    {jsonError && (
+                                                        <p style={{ color: '#ef4444', marginTop: '8px', fontSize: '14px' }}>
+                                                            ⚠️ {jsonError}
+                                                        </p>
+                                                    )}
+                                                </div>
 
-                                        <div className="form-group">
-                                            <label className="form-label">Output Formats</label>
+                                                <div className="form-group">
+                                                    <label className="form-label">Output Formats</label>
+                                                    <div className="flex gap-md">
+                                                        {['pdf', 'png', 'jpg'].map(format => (
+                                                            <label key={format} className="flex items-center gap-sm" style={{ cursor: 'pointer' }}>
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={outputFormats.includes(format)}
+                                                                    onChange={() => handleFormatToggle(format)}
+                                                                />
+                                                                {format.toUpperCase()}
+                                                            </label>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                <div className="alert" style={{ background: 'rgba(99, 102, 241, 0.1)', borderColor: '#6366f1', marginTop: '16px' }}>
+                                                    <strong>💡 Tip:</strong> Paste your JSON with the required fields: student_name, course_name, issue_date, certificate_id, issuing_authority
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="flex justify-between mt-xl">
+                                            <button type="button" className="btn btn-secondary" onClick={() => setStep(1)}>
+                                                Back
+                                            </button>
                                             <div className="flex gap-md">
-                                                {['pdf', 'png', 'jpg'].map(format => (
-                                                    <label key={format} className="flex items-center gap-sm" style={{ cursor: 'pointer' }}>
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={outputFormats.includes(format)}
-                                                            onChange={() => handleFormatToggle(format)}
-                                                        />
-                                                        {format.toUpperCase()}
-                                                    </label>
-                                                ))}
+                                                <button type="button" className="btn btn-outline btn-lg" onClick={handlePreviewEdit}>
+                                                    🖌️ Preview & Edit
+                                                </button>
+                                                <button type="submit" className="btn btn-primary btn-lg" disabled={loading}>
+                                                    {loading ? <span className="spinner" /> : 'Generate Certificate'}
+                                                </button>
                                             </div>
                                         </div>
+                                    </form>
+                                </div>
+                            )}
 
-                                        <div className="alert" style={{ background: 'rgba(99, 102, 241, 0.1)', borderColor: '#6366f1', marginTop: '16px' }}>
-                                            <strong>💡 Tip:</strong> Paste your JSON with the required fields: student_name, course_name, issue_date, certificate_id, issuing_authority
+                            {/* Step 3: Download */}
+                            {step === 3 && result && (
+                                <div className="card text-center" style={{ maxWidth: '600px', margin: '0 auto' }}>
+                                    <div className="download-section">
+                                        <div className="download-icon">
+                                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                                <polyline points="7 10 12 15 17 10" />
+                                                <line x1="12" y1="15" x2="12" y2="3" />
+                                            </svg>
                                         </div>
-                                    </div>
-                                )}
 
-                                <div className="flex justify-between mt-xl">
-                                    <button type="button" className="btn btn-secondary" onClick={() => setStep(1)}>
-                                        Back
-                                    </button>
-                                    <button type="submit" className="btn btn-primary btn-lg" disabled={loading}>
-                                        {loading ? <span className="spinner" /> : 'Generate Certificate'}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    )}
+                                        <h2 className="mb-md">Certificate Generated!</h2>
+                                        <p className="text-muted mb-xl">
+                                            Certificate ID: <strong>{result.certificate_id}</strong>
+                                        </p>
 
-                    {/* Step 3: Download */}
-                    {step === 3 && result && (
-                        <div className="card text-center" style={{ maxWidth: '600px', margin: '0 auto' }}>
-                            <div className="download-section">
-                                <div className="download-icon">
-                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                        <polyline points="7 10 12 15 17 10" />
-                                        <line x1="12" y1="15" x2="12" y2="3" />
-                                    </svg>
-                                </div>
+                                        <div className="download-buttons">
+                                            {Object.entries(result.download_urls).map(([format, url]) => (
+                                                <a
+                                                    key={format}
+                                                    href={url}
+                                                    download
+                                                    className="btn btn-primary"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    Download {format.toUpperCase()}
+                                                </a>
+                                            ))}
+                                        </div>
 
-                                <h2 className="mb-md">Certificate Generated!</h2>
-                                <p className="text-muted mb-xl">
-                                    Certificate ID: <strong>{result.certificate_id}</strong>
-                                </p>
-
-                                <div className="download-buttons">
-                                    {Object.entries(result.download_urls).map(([format, url]) => (
-                                        <a
-                                            key={format}
-                                            href={url}
-                                            download
-                                            className="btn btn-primary"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
+                                        <button
+                                            className="btn btn-secondary mt-xl"
+                                            onClick={() => {
+                                                setStep(1);
+                                                setResult(null);
+                                                setFormData({
+                                                    student_name: '',
+                                                    course_name: '',
+                                                    issue_date: new Date().toISOString().split('T')[0],
+                                                    issuing_authority: '',
+                                                    signature_name: '',
+                                                    signature_image_url: '',
+                                                    logo_url: '',
+                                                    custom_body: ''
+                                                });
+                                            }}
                                         >
-                                            Download {format.toUpperCase()}
-                                        </a>
-                                    ))}
+                                            Generate Another
+                                        </button>
+                                    </div>
                                 </div>
-
-                                <button
-                                    className="btn btn-secondary mt-xl"
-                                    onClick={() => {
-                                        setStep(1);
-                                        setResult(null);
-                                        setFormData({
-                                            student_name: '',
-                                            course_name: '',
-                                            issue_date: new Date().toISOString().split('T')[0],
-                                            issuing_authority: '',
-                                            signature_name: '',
-                                            signature_image_url: '',
-                                            logo_url: '',
-                                            custom_body: ''
-                                        });
-                                    }}
-                                >
-                                    Generate Another
-                                </button>
-                            </div>
-                        </div>
+                            )}
+                        </>
                     )}
                 </div>
-            </main >
+            </main>
 
             {/* History Modal */}
             {
@@ -816,12 +965,12 @@ function GeneratePage() {
                                                 <td style={{ padding: '12px', color: '#888' }}>{cert.issue_date}</td>
                                                 <td style={{ padding: '12px' }}>
                                                     {cert.download_urls.pdf && (
-                                                        <a href={`http://localhost:8000${cert.download_urls.pdf}`}
+                                                        <a href={`${API_URL}${cert.download_urls.pdf}`}
                                                             target="_blank" rel="noopener noreferrer"
                                                             style={{ color: '#60a5fa', marginRight: '10px' }}>PDF</a>
                                                     )}
                                                     {cert.download_urls.png && (
-                                                        <a href={`http://localhost:8000${cert.download_urls.png}`}
+                                                        <a href={`${API_URL}${cert.download_urls.png}`}
                                                             target="_blank" rel="noopener noreferrer"
                                                             style={{ color: '#60a5fa' }}>PNG</a>
                                                     )}
@@ -1005,7 +1154,7 @@ function BulkGeneratePage() {
                                             <div className="template-preview">
                                                 {template.thumbnail_url ? (
                                                     <img
-                                                        src={`http://localhost:8000${template.thumbnail_url}`}
+                                                        src={`${API_URL}${template.thumbnail_url}`}
                                                         alt={template.name}
                                                     />
                                                 ) : (
@@ -1235,7 +1384,7 @@ function BulkGeneratePage() {
 
                                 {result.zip_download_url && (
                                     <a
-                                        href={`http://localhost:8000${result.zip_download_url}`}
+                                        href={`${API_URL}${result.zip_download_url}`}
                                         download
                                         className="btn btn-primary btn-lg"
                                         target="_blank"
