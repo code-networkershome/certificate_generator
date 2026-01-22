@@ -439,7 +439,7 @@ function GeneratePage() {
         <div className="page">
             <Header
                 isAuthenticated={true}
-                onLogout={() => { authAPI.logout(); window.location.href = '/login'; }}
+                onLogout={async () => { await authAPI.logout(); window.location.href = '/login'; }}
                 onHistoryClick={handleHistoryClick}
             />
 
@@ -1076,7 +1076,7 @@ function BulkGeneratePage() {
 
     return (
         <div className="page">
-            <Header isAuthenticated={true} onLogout={() => { authAPI.logout(); window.location.href = '/login'; }} />
+            <Header isAuthenticated={true} onLogout={async () => { await authAPI.logout(); window.location.href = '/login'; }} />
 
             <main className="main-content">
                 <div className="container">

@@ -113,7 +113,7 @@ export const certificatesAPI = {
         formData.append('output_formats', outputFormats.join(','));
         formData.append('file', file);
 
-        const token = getToken();
+        const token = await getToken();
         const response = await fetch(`${API_URL}/certificate/bulk-generate/csv`, {
             method: 'POST',
             headers: {
@@ -164,7 +164,7 @@ export const certificatesAPI = {
 export const uploadsAPI = {
     uploadImage: async (file) => {
         const url = `${API_URL}/upload/image`;
-        const token = getToken();
+        const token = await getToken();
 
         const formData = new FormData();
         formData.append('file', file);

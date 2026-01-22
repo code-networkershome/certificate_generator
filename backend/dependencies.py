@@ -98,7 +98,8 @@ def decode_access_token(token: str) -> dict:
                     pass
             
             if supabase_url:
-                jwks_url = f"{supabase_url.rstrip('/')}/.well-known/jwks.json"
+                # Supabase JWKS endpoint is at /auth/v1/.well-known/jwks.json
+                jwks_url = f"{supabase_url.rstrip('/')}/auth/v1/.well-known/jwks.json"
                 print(f"Fetching JWKS from: {jwks_url}")
                 
                 try:

@@ -31,6 +31,16 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRATION_HOURS: int = 24
     
+    # Supabase Configuration (for authentication)
+    SUPABASE_URL: Optional[str] = Field(
+        default=None,
+        description="Supabase project URL for JWKS verification"
+    )
+    SUPABASE_JWT_SECRET: Optional[str] = Field(
+        default=None,
+        description="Supabase JWT secret for HS256 tokens"
+    )
+    
     # OTP
     OTP_EXPIRY_MINUTES: int = 5
     OTP_MAX_ATTEMPTS: int = 5
@@ -64,6 +74,7 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = True
+        extra = "ignore"  # Ignore extra environment variables
 
 
 @lru_cache()
