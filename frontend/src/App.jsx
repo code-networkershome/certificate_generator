@@ -876,25 +876,36 @@ function GeneratePage() {
                                             ))}
                                         </div>
 
-                                        <button
-                                            className="btn btn-secondary mt-xl"
-                                            onClick={() => {
-                                                setStep(1);
-                                                setResult(null);
-                                                setFormData({
-                                                    student_name: '',
-                                                    course_name: '',
-                                                    issue_date: new Date().toISOString().split('T')[0],
-                                                    issuing_authority: '',
-                                                    signature_name: '',
-                                                    signature_image_url: '',
-                                                    logo_url: '',
-                                                    custom_body: ''
-                                                });
-                                            }}
-                                        >
-                                            Generate Another
-                                        </button>
+                                        <div className="flex gap-md justify-center mt-xl">
+                                            <button
+                                                className="btn btn-secondary"
+                                                onClick={() => {
+                                                    setStep(2);
+                                                    setResult(null);
+                                                }}
+                                            >
+                                                ← Back to Details
+                                            </button>
+                                            <button
+                                                className="btn btn-outline"
+                                                onClick={() => {
+                                                    setStep(1);
+                                                    setResult(null);
+                                                    setFormData({
+                                                        student_name: '',
+                                                        course_name: '',
+                                                        issue_date: new Date().toISOString().split('T')[0],
+                                                        issuing_authority: '',
+                                                        signature_name: '',
+                                                        signature_image_url: '',
+                                                        logo_url: '',
+                                                        custom_body: ''
+                                                    });
+                                                }}
+                                            >
+                                                🔄 Start Over
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             )}
