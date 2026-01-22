@@ -303,8 +303,8 @@ function GeneratePage() {
 
         try {
             const result = await uploadsAPI.uploadImage(file);
-            // Set the full URL including the API base
-            const fullUrl = `${API_URL}${result.url}`;
+            // Set the full URL - handle both absolute (Supabase) and relative (local) URLs
+            const fullUrl = result.url.startsWith('http') ? result.url : `${API_URL}${result.url}`;
             setFormData(prev => ({ ...prev, [fieldName]: fullUrl }));
         } catch (err) {
             setError(`Failed to upload ${uploadType}: ${err.message}`);
