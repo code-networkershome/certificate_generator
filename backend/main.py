@@ -89,6 +89,57 @@ async def health_check():
     return {"status": "healthy"}
 
 
+@app.get("/health/storage", tags=["Health"])
+async def health_check_storage():
+    """Health check for storage connection."""
+    from config import get_settings
+    from pathlib import Path
+    
+    settings = get_settings()
+    
+    try:
+        if settings.STORAGE_TYPE == "supabase":
+            # Test Supabase Storage connection
+            from supabase import create_client
+            
+            if not settings.SUPABASE_URL or not settings.SUPABASE_SERVICE_ROLE_KEY:
+                return {
+                    "status": "unhealthy",
+                    "storage_type": "supabase",
+                    "error": "SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set"
+                }
+            
+            supabase = create_client(
+                settings.SUPABASE_URL,
+                settings.SUPABASE_SERVICE_ROLE_KEY
+            )
+            bucket_name = settings.SUPABASE_STORAGE_BUCKET or "certificates"
+            
+            # Try to list files (this will fail if bucket doesn't exist or no access)
+            files = supabase.storage.from_(bucket_name).list(limit=1)
+            return {
+                "status": "healthy",
+                "storage_type": "supabase",
+                "bucket": bucket_name,
+                "connected": True
+            }
+        else:
+            # Local storage - just check if directory exists
+            storage_path = Path(settings.STORAGE_PATH)
+            return {
+                "status": "healthy",
+                "storage_type": "local",
+                "path": str(storage_path),
+                "exists": storage_path.exists()
+            }
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "storage_type": settings.STORAGE_TYPE,
+            "error": str(e)
+        }
+
+
 @app.get("/", tags=["Root"])
 async def root():
     """Root endpoint with API information."""

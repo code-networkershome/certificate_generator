@@ -125,16 +125,31 @@ class StorageService:
     """Service for file storage operations"""
     
     def __init__(self):
-        """Initialize storage directory"""
-        self.storage_path = Path(settings.STORAGE_PATH)
-        self.storage_path.mkdir(parents=True, exist_ok=True)
+        """Initialize storage directory or Supabase client"""
+        self.storage_type = settings.STORAGE_TYPE
+        
+        if self.storage_type == "supabase":
+            # Initialize Supabase Storage client
+            try:
+                from supabase import create_client, Client
+                if not settings.SUPABASE_URL or not settings.SUPABASE_SERVICE_ROLE_KEY:
+                    raise ValueError("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set for Supabase storage")
+                self.supabase: Client = create_client(
+                    settings.SUPABASE_URL,
+                    settings.SUPABASE_SERVICE_ROLE_KEY
+                )
+                self.bucket_name = settings.SUPABASE_STORAGE_BUCKET or "certificates"
+            except ImportError:
+                raise ImportError("supabase package not installed. Run: pip install supabase")
+        else:
+            # Local storage
+            self.storage_path = Path(settings.STORAGE_PATH)
+            self.storage_path.mkdir(parents=True, exist_ok=True)
     
-    def _get_file_path(self, certificate_id: str, format: str) -> Path:
-        """Generate file path for certificate"""
+    def _get_file_path(self, certificate_id: str, format: str) -> str:
+        """Generate file path for certificate (relative path)"""
         date_prefix = datetime.now().strftime('%Y/%m/%d')
-        dir_path = self.storage_path / date_prefix
-        dir_path.mkdir(parents=True, exist_ok=True)
-        return dir_path / f"{certificate_id}.{format}"
+        return f"{date_prefix}/{certificate_id}.{format}"
     
     def save_file(
         self,
@@ -143,26 +158,82 @@ class StorageService:
         format: str
     ) -> str:
         """
-        Save file to storage.
+        Save file to storage (local or Supabase).
         Returns relative path to file.
         """
-        file_path = self._get_file_path(certificate_id, format)
+        relative_path = self._get_file_path(certificate_id, format)
         
-        with open(file_path, 'wb') as f:
-            f.write(file_bytes)
-        
-        # Return relative path for URL generation
-        return str(file_path.relative_to(self.storage_path))
+        if self.storage_type == "supabase":
+            # Upload to Supabase Storage
+            try:
+                # Upload file to Supabase Storage bucket
+                response = self.supabase.storage.from_(self.bucket_name).upload(
+                    path=relative_path,
+                    file=file_bytes,
+                    file_options={"content-type": self._get_content_type(format)}
+                )
+                # Supabase returns the path
+                return relative_path
+            except Exception as e:
+                raise Exception(f"Failed to upload to Supabase Storage: {str(e)}")
+        else:
+            # Local storage
+            file_path = self.storage_path / relative_path
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            with open(file_path, 'wb') as f:
+                f.write(file_bytes)
+            
+            return relative_path
+    
+    def _get_content_type(self, format: str) -> str:
+        """Get content type for file format"""
+        content_types = {
+            'pdf': 'application/pdf',
+            'png': 'image/png',
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg'
+        }
+        return content_types.get(format.lower(), 'application/octet-stream')
     
     def get_download_url(self, relative_path: str, base_url: str = "http://localhost:8000") -> str:
         """Generate download URL for file"""
-        # In production: generate presigned S3 URL
-        # Return full URL so frontend knows where to fetch from
-        return f"{base_url}/downloads/{relative_path}"
+        if self.storage_type == "supabase":
+            # Get public URL from Supabase Storage
+            try:
+                # Get public URL (or create signed URL if bucket is private)
+                response = self.supabase.storage.from_(self.bucket_name).get_public_url(relative_path)
+                return response
+            except Exception as e:
+                # Fallback: try to create signed URL for private buckets
+                try:
+                    # Create signed URL (valid for 1 hour)
+                    response = self.supabase.storage.from_(self.bucket_name).create_signed_url(
+                        path=relative_path,
+                        expires_in=3600
+                    )
+                    return response.get('signedURL', '')
+                except:
+                    raise Exception(f"Failed to get download URL from Supabase: {str(e)}")
+        else:
+            # Local storage - return relative URL
+            return f"{base_url}/downloads/{relative_path}"
     
     def file_exists(self, relative_path: str) -> bool:
         """Check if file exists"""
-        return (self.storage_path / relative_path).exists()
+        if self.storage_type == "supabase":
+            try:
+                # List files in the path to check existence
+                path_parts = relative_path.split('/')
+                folder_path = '/'.join(path_parts[:-1]) if len(path_parts) > 1 else ''
+                file_name = path_parts[-1]
+                
+                files = self.supabase.storage.from_(self.bucket_name).list(folder_path)
+                return any(f['name'] == file_name for f in files)
+            except:
+                return False
+        else:
+            return (self.storage_path / relative_path).exists()
 
 
 class CertificateService:

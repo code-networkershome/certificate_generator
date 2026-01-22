@@ -13,17 +13,31 @@ settings = get_settings()
 
 router = APIRouter(prefix="/upload", tags=["uploads"])
 
-# Storage directory for uploaded images
+# Initialize Supabase client if using Supabase storage
+supabase_client = None
+if settings.STORAGE_TYPE == "supabase":
+    try:
+        from supabase import create_client
+        if settings.SUPABASE_URL and settings.SUPABASE_SERVICE_ROLE_KEY:
+            supabase_client = create_client(
+                settings.SUPABASE_URL,
+                settings.SUPABASE_SERVICE_ROLE_KEY
+            )
+    except ImportError:
+        pass
+
+# Storage directory for uploaded images (local only)
 # Use STORAGE_PATH from env or fallback to /tmp for Render
 UPLOAD_DIR = os.path.join(settings.STORAGE_PATH or "/tmp/storage", "uploads")
 
 # Ensure upload directory exists (with error handling for restricted environments)
-try:
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-except PermissionError:
-    # Fallback to /tmp if we can't create in the configured path
-    UPLOAD_DIR = "/tmp/uploads"
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
+if settings.STORAGE_TYPE != "supabase":
+    try:
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
+    except PermissionError:
+        # Fallback to /tmp if we can't create in the configured path
+        UPLOAD_DIR = "/tmp/uploads"
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # Allowed image extensions
 ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"}
@@ -60,12 +74,30 @@ async def upload_image(file: UploadFile = File(...)):
     filename = f"{timestamp}_{unique_id}{ext}"
     
     # Save file
-    filepath = os.path.join(UPLOAD_DIR, filename)
-    with open(filepath, "wb") as f:
-        f.write(content)
-    
-    # Return URL
-    url = f"/storage/uploads/{filename}"
+    if settings.STORAGE_TYPE == "supabase" and supabase_client:
+        # Upload to Supabase Storage
+        upload_path = f"uploads/{filename}"
+        try:
+            bucket_name = settings.SUPABASE_STORAGE_BUCKET or "certificates"
+            response = supabase_client.storage.from_(bucket_name).upload(
+                path=upload_path,
+                file=content,
+                file_options={"content-type": f"image/{ext[1:]}" if ext != '.svg' else 'image/svg+xml'}
+            )
+            # Get public URL
+            url = supabase_client.storage.from_(bucket_name).get_public_url(upload_path)
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to upload to Supabase Storage: {str(e)}"
+            )
+    else:
+        # Local storage
+        filepath = os.path.join(UPLOAD_DIR, filename)
+        with open(filepath, "wb") as f:
+            f.write(content)
+        # Return URL
+        url = f"/storage/uploads/{filename}"
     
     return JSONResponse({
         "success": True,
@@ -79,15 +111,26 @@ async def delete_image(filename: str):
     """
     Delete an uploaded image.
     """
-    filepath = os.path.join(UPLOAD_DIR, filename)
-    
-    if not os.path.exists(filepath):
-        raise HTTPException(status_code=404, detail="File not found")
-    
     # Security check - ensure filename doesn't contain path traversal
     if ".." in filename or "/" in filename or "\\" in filename:
         raise HTTPException(status_code=400, detail="Invalid filename")
     
-    os.remove(filepath)
+    if settings.STORAGE_TYPE == "supabase" and supabase_client:
+        # Delete from Supabase Storage
+        upload_path = f"uploads/{filename}"
+        try:
+            bucket_name = settings.SUPABASE_STORAGE_BUCKET or "certificates"
+            supabase_client.storage.from_(bucket_name).remove([upload_path])
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to delete from Supabase Storage: {str(e)}"
+            )
+    else:
+        # Local storage
+        filepath = os.path.join(UPLOAD_DIR, filename)
+        if not os.path.exists(filepath):
+            raise HTTPException(status_code=404, detail="File not found")
+        os.remove(filepath)
     
     return JSONResponse({"success": True, "message": "File deleted"})

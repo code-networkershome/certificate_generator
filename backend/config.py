@@ -47,12 +47,21 @@ class Settings(BaseSettings):
     OTP_RATE_LIMIT_MINUTES: int = 15
     
     # Storage
-    STORAGE_TYPE: str = "local"  # "local" or "s3"
+    STORAGE_TYPE: str = "local"  # "local", "s3", or "supabase"
     STORAGE_PATH: str = "./storage"
     S3_BUCKET: Optional[str] = None
     S3_ACCESS_KEY: Optional[str] = None
     S3_SECRET_KEY: Optional[str] = None
     S3_ENDPOINT: Optional[str] = None
+    # Supabase Storage
+    SUPABASE_STORAGE_BUCKET: Optional[str] = Field(
+        default="certificates",
+        description="Supabase Storage bucket name for certificates"
+    )
+    SUPABASE_SERVICE_ROLE_KEY: Optional[str] = Field(
+        default=None,
+        description="Supabase service role key for storage operations"
+    )
     
     # Templates
     TEMPLATES_PATH: str = "./templates"
