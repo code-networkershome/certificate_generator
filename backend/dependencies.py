@@ -175,6 +175,7 @@ async def get_current_user(
 ) -> str:
     """
     Dependency to extract and validate current user from Supabase JWT token.
+    Auto-creates the user in the database if they don't exist.
     
     Args:
         credentials: Bearer token from Authorization header
@@ -195,6 +196,36 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token: no user ID"
         )
+    
+    # Auto-create user in database if they don't exist
+    # This syncs Supabase Auth users with the backend database
+    try:
+        from database import async_session
+        from db_models import User
+        from sqlalchemy import select
+        import uuid
+        
+        async with async_session() as db:
+            # Check if user exists
+            result = await db.execute(
+                select(User).where(User.id == uuid.UUID(user_id))
+            )
+            existing_user = result.scalar_one_or_none()
+            
+            if not existing_user:
+                # Create user with info from token
+                email = token_payload.get("email", f"{user_id}@supabase.user")
+                new_user = User(
+                    id=uuid.UUID(user_id),
+                    email=email,
+                    is_active=True
+                )
+                db.add(new_user)
+                await db.commit()
+                print(f"Auto-created user in database: {user_id} ({email})")
+    except Exception as e:
+        # Log but don't fail - user might already exist from race condition
+        print(f"Note: Could not auto-create user: {e}")
     
     return user_id
 
