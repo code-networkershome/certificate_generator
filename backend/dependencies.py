@@ -63,6 +63,7 @@ def create_access_token(user_id: str, expires_delta: Optional[timedelta] = None)
 def decode_access_token(token: str) -> dict:
     """
     Decode and validate a Supabase JWT access token.
+    Supports both HS256 (symmetric) and ES256 (asymmetric) algorithms.
     
     Args:
         token: The JWT token string from Supabase
@@ -73,28 +74,69 @@ def decode_access_token(token: str) -> dict:
     Raises:
         HTTPException: If token is invalid or expired
     """
-    # Debug: Check if secret is properly configured
-    is_default_secret = SUPABASE_JWT_SECRET == 'your-supabase-jwt-secret'
-    
-    if is_default_secret:
-        print("WARNING: SUPABASE_JWT_SECRET is using the default placeholder value!")
-        print("Please set the SUPABASE_JWT_SECRET environment variable to your Supabase project's JWT secret.")
+    import requests
+    from jwt import PyJWKClient
     
     try:
-        # First, try to decode without verification to inspect the token
+        # First, inspect the token to see what algorithm it uses
         unverified_header = jwt.get_unverified_header(token)
         token_alg = unverified_header.get('alg', 'unknown')
         print(f"Token algorithm: {token_alg}")
         
-        # Supabase uses HS256 with the JWT secret
-        # options={"verify_aud": False} because Supabase sets aud to "authenticated"
-        payload = jwt.decode(
-            token, 
-            SUPABASE_JWT_SECRET, 
-            algorithms=["HS256"],  # Supabase uses HS256 only
-            options={"verify_aud": False}
-        )
-        return payload
+        if token_alg == "ES256":
+            # ES256 uses asymmetric encryption - need to get public key from JWKS
+            # Get Supabase URL from environment or extract from token
+            supabase_url = os.environ.get("SUPABASE_URL", os.environ.get("VITE_SUPABASE_URL", ""))
+            
+            if not supabase_url:
+                # Try to extract project ref from token issuer
+                try:
+                    unverified_payload = jwt.decode(token, options={"verify_signature": False})
+                    issuer = unverified_payload.get("iss", "")
+                    if "supabase" in issuer:
+                        supabase_url = issuer.replace("/auth/v1", "")
+                except:
+                    pass
+            
+            if supabase_url:
+                jwks_url = f"{supabase_url.rstrip('/')}/.well-known/jwks.json"
+                print(f"Fetching JWKS from: {jwks_url}")
+                
+                try:
+                    jwks_client = PyJWKClient(jwks_url)
+                    signing_key = jwks_client.get_signing_key_from_jwt(token)
+                    
+                    payload = jwt.decode(
+                        token,
+                        signing_key.key,
+                        algorithms=["ES256"],
+                        options={"verify_aud": False}
+                    )
+                    return payload
+                except Exception as e:
+                    print(f"JWKS verification failed: {e}")
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="Token verification failed",
+                        headers={"WWW-Authenticate": "Bearer"}
+                    )
+            else:
+                print("WARNING: SUPABASE_URL not configured for ES256 token verification")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Server configuration error - SUPABASE_URL not set",
+                    headers={"WWW-Authenticate": "Bearer"}
+                )
+        else:
+            # HS256 uses symmetric encryption with JWT secret
+            payload = jwt.decode(
+                token, 
+                SUPABASE_JWT_SECRET, 
+                algorithms=["HS256"],
+                options={"verify_aud": False}
+            )
+            return payload
+            
     except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -103,16 +145,13 @@ def decode_access_token(token: str) -> dict:
         )
     except jwt.InvalidAlgorithmError as e:
         print(f"JWT algorithm error: {e}")
-        print(f"Token uses algorithm: {token_alg}, expected: HS256")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token algorithm",
             headers={"WWW-Authenticate": "Bearer"}
         )
     except jwt.InvalidSignatureError:
-        print("JWT signature verification failed - the secret key may be incorrect")
-        secret_preview = SUPABASE_JWT_SECRET[:10] + "..." if len(SUPABASE_JWT_SECRET) > 10 else "TOO_SHORT"
-        print(f"JWT Secret preview: {secret_preview} (length: {len(SUPABASE_JWT_SECRET)})")
+        print("JWT signature verification failed")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token signature",
@@ -120,9 +159,6 @@ def decode_access_token(token: str) -> dict:
         )
     except jwt.InvalidTokenError as e:
         print(f"JWT decode error: {e}")
-        secret_preview = SUPABASE_JWT_SECRET[:10] + "..." if len(SUPABASE_JWT_SECRET) > 10 else "TOO_SHORT"
-        print(f"JWT Secret configured: {secret_preview} (length: {len(SUPABASE_JWT_SECRET)})")
-        print(f"Using default placeholder: {is_default_secret}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token",
