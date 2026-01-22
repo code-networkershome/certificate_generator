@@ -1,0 +1,46 @@
+# Environment files with secrets
+.env
+.env.local
+.env.production
+backend/.env
+frontend/.env
+
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker volumes
+postgres_data/
+
+# Generated files
+storage/
+*.log
+
+# Python
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
