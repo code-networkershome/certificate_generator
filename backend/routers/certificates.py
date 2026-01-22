@@ -452,7 +452,7 @@ def _inject_editor_overrides(html: str, positions: list, styles: list) -> str:
     if positions:
         for pos in positions:
             override_css += f"""
-            [data-editor-id="{pos.element_id}"] {{
+            [data-editable="{pos.element_id}"] {{
                 position: absolute !important;
                 left: {pos.x}px !important;
                 top: {pos.y}px !important;
@@ -473,7 +473,7 @@ def _inject_editor_overrides(html: str, positions: list, styles: list) -> str:
             
             if rules:
                 override_css += f"""
-                [data-editor-id="{style.element_id}"] {{
+                [data-editable="{style.element_id}"] {{
                     {"; ".join(rules)};
                 }}
                 """
