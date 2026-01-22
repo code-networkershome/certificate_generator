@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { API_URL } from '../api';
+import { authService } from '../supabase';
 
 /**
  * CertificateEditor - Interactive preview editor with drag-drop and click-to-edit
@@ -47,7 +48,7 @@ export default function CertificateEditor({
         setError('');
 
         try {
-            const token = localStorage.getItem('access_token');
+            const token = await authService.getAccessToken();
             const response = await fetch(`${API_URL}/certificate/preview`, {
                 method: 'POST',
                 headers: {
