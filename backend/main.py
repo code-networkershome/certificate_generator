@@ -116,7 +116,7 @@ async def health_check_storage():
             bucket_name = settings.SUPABASE_STORAGE_BUCKET or "certificates"
             
             # Try to list files (this will fail if bucket doesn't exist or no access)
-            files = supabase.storage.from_(bucket_name).list(limit=1)
+            files = supabase.storage.from_(bucket_name).list()
             return {
                 "status": "healthy",
                 "storage_type": "supabase",
