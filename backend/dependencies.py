@@ -74,7 +74,6 @@ def decode_access_token(token: str) -> dict:
     Raises:
         HTTPException: If token is invalid or expired
     """
-    import requests
     from jwt import PyJWKClient
     
     try:
