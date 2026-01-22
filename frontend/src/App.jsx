@@ -493,7 +493,7 @@ function GeneratePage() {
                                                     <div className="template-preview">
                                                         {template.thumbnail_url ? (
                                                             <img
-                                                                src={`${API_URL}${template.thumbnail_url}`}
+                                                                src={template.thumbnail_url.startsWith('http') ? template.thumbnail_url : `${API_URL}${template.thumbnail_url}`}
                                                                 alt={template.name}
                                                                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                             />
@@ -1122,7 +1122,7 @@ function BulkGeneratePage() {
                                             <div className="template-preview">
                                                 {template.thumbnail_url ? (
                                                     <img
-                                                        src={`${API_URL}${template.thumbnail_url}`}
+                                                        src={template.thumbnail_url.startsWith('http') ? template.thumbnail_url : `${API_URL}${template.thumbnail_url}`}
                                                         alt={template.name}
                                                     />
                                                 ) : (
