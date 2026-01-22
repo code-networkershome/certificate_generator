@@ -850,16 +850,29 @@ function GeneratePage() {
 
                                         <div className="download-buttons">
                                             {Object.entries(result.download_urls).map(([format, url]) => (
-                                                <a
+                                                <button
                                                     key={format}
-                                                    href={url}
-                                                    download
                                                     className="btn btn-primary"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
+                                                    onClick={async () => {
+                                                        try {
+                                                            const response = await fetch(url);
+                                                            const blob = await response.blob();
+                                                            const blobUrl = window.URL.createObjectURL(blob);
+                                                            const link = document.createElement('a');
+                                                            link.href = blobUrl;
+                                                            link.download = `${result.certificate_id}.${format}`;
+                                                            document.body.appendChild(link);
+                                                            link.click();
+                                                            document.body.removeChild(link);
+                                                            window.URL.revokeObjectURL(blobUrl);
+                                                        } catch (err) {
+                                                            // Fallback to opening in new tab
+                                                            window.open(url, '_blank');
+                                                        }
+                                                    }}
                                                 >
                                                     Download {format.toUpperCase()}
-                                                </a>
+                                                </button>
                                             ))}
                                         </div>
 
