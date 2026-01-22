@@ -383,8 +383,19 @@ async def get_certificate_history(
     )
     certificates = result.scalars().all()
     
+    # Get storage service for generating proper download URLs
+    from services.certificate_service import storage_service
+    
     history = []
     for cert in certificates:
+        download_urls = {}
+        if cert.pdf_path:
+            download_urls["pdf"] = storage_service.get_download_url(cert.pdf_path)
+        if cert.png_path:
+            download_urls["png"] = storage_service.get_download_url(cert.png_path)
+        if cert.jpg_path:
+            download_urls["jpg"] = storage_service.get_download_url(cert.jpg_path)
+        
         history.append({
             "id": str(cert.id),
             "certificate_id": cert.certificate_id,
@@ -393,11 +404,7 @@ async def get_certificate_history(
             "issue_date": cert.certificate_data.get("issue_date", ""),
             "status": cert.status,
             "generated_at": cert.generated_at.isoformat() if cert.generated_at else None,
-            "download_urls": {
-                "pdf": f"/downloads/{cert.pdf_path}" if cert.pdf_path else None,
-                "png": f"/downloads/{cert.png_path}" if cert.png_path else None,
-                "jpg": f"/downloads/{cert.jpg_path}" if cert.jpg_path else None
-            }
+            "download_urls": download_urls
         })
     
     return {"certificates": history, "total": len(history)}

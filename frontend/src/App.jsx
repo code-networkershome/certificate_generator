@@ -946,14 +946,50 @@ function GeneratePage() {
                                                 <td style={{ padding: '12px', color: '#888' }}>{cert.issue_date}</td>
                                                 <td style={{ padding: '12px' }}>
                                                     {cert.download_urls.pdf && (
-                                                        <a href={`${API_URL}${cert.download_urls.pdf}`}
-                                                            target="_blank" rel="noopener noreferrer"
-                                                            style={{ color: '#60a5fa', marginRight: '10px' }}>PDF</a>
+                                                        <button
+                                                            onClick={async () => {
+                                                                const url = cert.download_urls.pdf.startsWith('http')
+                                                                    ? cert.download_urls.pdf
+                                                                    : `${API_URL}${cert.download_urls.pdf}`;
+                                                                try {
+                                                                    const response = await fetch(url);
+                                                                    const blob = await response.blob();
+                                                                    const blobUrl = window.URL.createObjectURL(blob);
+                                                                    const link = document.createElement('a');
+                                                                    link.href = blobUrl;
+                                                                    link.download = `${cert.certificate_id}.pdf`;
+                                                                    document.body.appendChild(link);
+                                                                    link.click();
+                                                                    document.body.removeChild(link);
+                                                                    window.URL.revokeObjectURL(blobUrl);
+                                                                } catch (err) {
+                                                                    window.open(url, '_blank');
+                                                                }
+                                                            }}
+                                                            style={{ color: '#60a5fa', marginRight: '10px', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>PDF</button>
                                                     )}
                                                     {cert.download_urls.png && (
-                                                        <a href={`${API_URL}${cert.download_urls.png}`}
-                                                            target="_blank" rel="noopener noreferrer"
-                                                            style={{ color: '#60a5fa' }}>PNG</a>
+                                                        <button
+                                                            onClick={async () => {
+                                                                const url = cert.download_urls.png.startsWith('http')
+                                                                    ? cert.download_urls.png
+                                                                    : `${API_URL}${cert.download_urls.png}`;
+                                                                try {
+                                                                    const response = await fetch(url);
+                                                                    const blob = await response.blob();
+                                                                    const blobUrl = window.URL.createObjectURL(blob);
+                                                                    const link = document.createElement('a');
+                                                                    link.href = blobUrl;
+                                                                    link.download = `${cert.certificate_id}.png`;
+                                                                    document.body.appendChild(link);
+                                                                    link.click();
+                                                                    document.body.removeChild(link);
+                                                                    window.URL.revokeObjectURL(blobUrl);
+                                                                } catch (err) {
+                                                                    window.open(url, '_blank');
+                                                                }
+                                                            }}
+                                                            style={{ color: '#60a5fa', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>PNG</button>
                                                     )}
                                                 </td>
                                             </tr>
