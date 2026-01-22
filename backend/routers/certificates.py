@@ -446,7 +446,63 @@ async def preview_certificate(
 
 
 def _inject_editor_overrides(html: str, positions: list, styles: list) -> str:
-    """Inject CSS overrides for element positions and styles."""
+    """
+    Inject CSS overrides for element positions and styles.
+    Also injects data-editable attributes into the HTML to make CSS selectors match.
+    """
+    import re
+    
+    # Collect all element IDs that need data-editable attributes
+    element_ids = set()
+    if positions:
+        for pos in positions:
+            element_ids.add(pos.element_id)
+    if styles:
+        for style in styles:
+            element_ids.add(style.element_id)
+    
+    # Inject data-editable attributes into HTML elements
+    # Map common class names to their IDs (based on frontend CertificateEditor.jsx patterns)
+    class_to_id_map = {
+        'recipient': 'recipient',
+        'student-name': 'student-name',
+        'course-name': 'course-name',
+        'title': 'title',
+        'subtitle': 'subtitle',
+        'description': 'description',
+        'date': 'date',
+        'value': 'value',
+        'certify-text': 'certify-text',
+        'intro': 'intro',
+        'body-text': 'body-text',
+        'footer': 'footer',
+        'signature': 'signature',
+        'authority': 'authority',
+    }
+    
+    modified_html = html
+    
+    # For each element ID we need to override, inject data-editable attribute
+    for element_id in element_ids:
+        # Try to find matching class and add data-editable
+        # Handle class="element_id" pattern
+        pattern = rf'class="([^"]*\b{re.escape(element_id)}\b[^"]*)"'
+        match = re.search(pattern, modified_html)
+        if match:
+            original = match.group(0)
+            new_attr = f'{original} data-editable="{element_id}"'
+            modified_html = modified_html.replace(original, new_attr, 1)
+        else:
+            # Try with hyphenated version (recipient -> recipient)
+            hyphenated = element_id.replace('_', '-')
+            pattern = rf'class="([^"]*\b{re.escape(hyphenated)}\b[^"]*)"'
+            match = re.search(pattern, modified_html)
+            if match:
+                original = match.group(0)
+                new_attr = f'{original} data-editable="{element_id}"'
+                modified_html = modified_html.replace(original, new_attr, 1)
+    
+    # Build CSS overrides
     override_css = "<style id='editor-overrides'>\n"
     
     if positions:
@@ -480,13 +536,13 @@ def _inject_editor_overrides(html: str, positions: list, styles: list) -> str:
     
     override_css += "</style>"
     
-    # Inject before closing </head> or at start of HTML
-    if "</head>" in html:
-        html = html.replace("</head>", f"{override_css}\n</head>")
+    # Inject CSS before closing </head> or at start of HTML
+    if "</head>" in modified_html:
+        modified_html = modified_html.replace("</head>", f"{override_css}\n</head>")
     else:
-        html = override_css + html
+        modified_html = override_css + modified_html
     
-    return html
+    return modified_html
 
 
 @router.post(
