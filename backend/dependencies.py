@@ -73,14 +73,25 @@ def decode_access_token(token: str) -> dict:
     Raises:
         HTTPException: If token is invalid or expired
     """
+    # Debug: Check if secret is properly configured
+    is_default_secret = SUPABASE_JWT_SECRET == 'your-supabase-jwt-secret'
+    
+    if is_default_secret:
+        print("WARNING: SUPABASE_JWT_SECRET is using the default placeholder value!")
+        print("Please set the SUPABASE_JWT_SECRET environment variable to your Supabase project's JWT secret.")
+    
     try:
-        # Try to decode with the JWT secret
+        # First, try to decode without verification to inspect the token
+        unverified_header = jwt.get_unverified_header(token)
+        token_alg = unverified_header.get('alg', 'unknown')
+        print(f"Token algorithm: {token_alg}")
+        
         # Supabase uses HS256 with the JWT secret
         # options={"verify_aud": False} because Supabase sets aud to "authenticated"
         payload = jwt.decode(
             token, 
             SUPABASE_JWT_SECRET, 
-            algorithms=["HS256", "RS256"],
+            algorithms=["HS256"],  # Supabase uses HS256 only
             options={"verify_aud": False}
         )
         return payload
@@ -90,8 +101,28 @@ def decode_access_token(token: str) -> dict:
             detail="Token has expired",
             headers={"WWW-Authenticate": "Bearer"}
         )
+    except jwt.InvalidAlgorithmError as e:
+        print(f"JWT algorithm error: {e}")
+        print(f"Token uses algorithm: {token_alg}, expected: HS256")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token algorithm",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    except jwt.InvalidSignatureError:
+        print("JWT signature verification failed - the secret key may be incorrect")
+        secret_preview = SUPABASE_JWT_SECRET[:10] + "..." if len(SUPABASE_JWT_SECRET) > 10 else "TOO_SHORT"
+        print(f"JWT Secret preview: {secret_preview} (length: {len(SUPABASE_JWT_SECRET)})")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token signature",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
     except jwt.InvalidTokenError as e:
         print(f"JWT decode error: {e}")
+        secret_preview = SUPABASE_JWT_SECRET[:10] + "..." if len(SUPABASE_JWT_SECRET) > 10 else "TOO_SHORT"
+        print(f"JWT Secret configured: {secret_preview} (length: {len(SUPABASE_JWT_SECRET)})")
+        print(f"Using default placeholder: {is_default_secret}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token",
