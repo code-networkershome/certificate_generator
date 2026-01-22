@@ -238,6 +238,17 @@ async def seed_templates():
         print("Seeding templates...")
         count = 0
         
+        # Determine thumbnail URL base based on storage type
+        if settings.STORAGE_TYPE == "supabase" and settings.SUPABASE_URL:
+            # Supabase Storage public URL format
+            bucket = settings.SUPABASE_STORAGE_BUCKET or "certificates"
+            thumbnail_base = f"{settings.SUPABASE_URL}/storage/v1/object/public/{bucket}/previews"
+            print(f"Using Supabase Storage for thumbnails: {thumbnail_base}")
+        else:
+            # Local storage
+            thumbnail_base = "/downloads/previews"
+            print(f"Using local storage for thumbnails: {thumbnail_base}")
+        
         for tmpl_data in TEMPLATES:
             # Read HTML content from file
             html_file = TEMPLATES_DIR / tmpl_data["file"]
@@ -245,15 +256,24 @@ async def seed_templates():
             if html_file.exists():
                 html_content = html_file.read_text(encoding='utf-8')
                 
+                # Construct thumbnail URL
+                # Extract filename from the original thumbnail_url
+                original_thumbnail = tmpl_data.get("thumbnail_url", "")
+                if original_thumbnail:
+                    filename = original_thumbnail.split("/")[-1]  # e.g., "classic_blue_preview.png"
+                    thumbnail_url = f"{thumbnail_base}/{filename}"
+                else:
+                    thumbnail_url = None
+                
                 template = Template(
                     name=tmpl_data["name"],
                     description=tmpl_data["description"],
                     html_content=html_content,
-                    thumbnail_url=None,  # Preview images not available, show placeholder
+                    thumbnail_url=thumbnail_url,
                     is_active=True
                 )
                 db.add(template)
-                print(f"  [OK] Added: {tmpl_data['name']}")
+                print(f"  [OK] Added: {tmpl_data['name']} (thumbnail: {thumbnail_url})")
                 count += 1
             else:
                 print(f"  [SKIP] Template file not found: {html_file}")

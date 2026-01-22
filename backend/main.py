@@ -148,3 +148,37 @@ async def root():
         "version": "1.0.0",
         "docs": "/docs"
     }
+
+
+@app.post("/admin/reseed-templates", tags=["Admin"])
+async def reseed_templates():
+    """Force reseed all templates. Use after uploading preview images to storage."""
+    try:
+        from seed_templates import seed_templates
+        await seed_templates()
+        return {
+            "status": "success",
+            "message": "Templates reseeded successfully"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@app.post("/admin/generate-previews", tags=["Admin"])
+async def generate_preview_images():
+    """Generate preview images for all templates and upload to storage."""
+    try:
+        from generate_previews import generate_previews
+        result = await generate_previews()
+        return {
+            "status": "success",
+            "message": f"Generated {result['generated']} previews, {result['errors']} errors"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
