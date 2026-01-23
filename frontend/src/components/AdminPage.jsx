@@ -138,13 +138,14 @@ export default function AdminPage() {
         }
     };
 
-    if (error === 'You do not have admin access') {
+    if (error === 'You do not have admin access' || (user && !user.is_admin)) {
         return (
             <div className="admin-page">
                 <div className="container">
                     <div className="card text-center" style={{ maxWidth: '500px', margin: '100px auto' }}>
-                        <h2 style={{ color: '#ef4444' }}>🚫 Access Denied</h2>
-                        <p className="text-muted">You do not have admin access to this page.</p>
+                        <h2 style={{ color: '#ef4444' }}>🚫 Admin Access Required</h2>
+                        <p className="text-muted">You are logged in as <strong>{user?.email}</strong>, but this account does not have administrator privileges.</p>
+                        <p className="mt-md">Please ensure you have set the <code>INITIAL_ADMIN_EMAIL</code> in your Render environment variables.</p>
                         <a href="/generate" className="btn btn-primary mt-lg">Go to Dashboard</a>
                     </div>
                 </div>

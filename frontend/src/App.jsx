@@ -16,6 +16,7 @@ function useAuth() {
     const fetchUserProfile = async () => {
         try {
             const profile = await usersAPI.getMe();
+            console.log('Backend Profile:', profile);
             setUser(profile);
             return profile;
         } catch (err) {
