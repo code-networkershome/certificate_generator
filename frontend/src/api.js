@@ -49,6 +49,24 @@ export const authAPI = {
         return authService.signIn(email, password);
     },
 
+    // Email OTP
+    sendEmailOTP: async (email) => {
+        return authService.sendEmailOTP(email);
+    },
+
+    verifyEmailOTP: async (email, token) => {
+        return authService.verifyEmailOTP(email, token);
+    },
+
+    // Phone OTP
+    sendPhoneOTP: async (phone) => {
+        return authService.sendPhoneOTP(phone);
+    },
+
+    verifyPhoneOTP: async (phone, token) => {
+        return authService.verifyPhoneOTP(phone, token);
+    },
+
     logout: async () => {
         await authService.signOut();
     },

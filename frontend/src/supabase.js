@@ -34,6 +34,60 @@ export const authService = {
         return data;
     },
 
+    // ============================================
+    // EMAIL OTP AUTHENTICATION
+    // ============================================
+
+    // Send OTP to email (magic link or code)
+    async sendEmailOTP(email) {
+        const { data, error } = await supabase.auth.signInWithOtp({
+            email,
+            options: {
+                shouldCreateUser: true,  // Create user if doesn't exist
+            }
+        });
+        if (error) throw error;
+        return data;
+    },
+
+    // Verify email OTP code
+    async verifyEmailOTP(email, token) {
+        const { data, error } = await supabase.auth.verifyOtp({
+            email,
+            token,
+            type: 'email'
+        });
+        if (error) throw error;
+        return data;
+    },
+
+    // ============================================
+    // PHONE OTP AUTHENTICATION
+    // ============================================
+
+    // Send OTP to phone number
+    async sendPhoneOTP(phone) {
+        const { data, error } = await supabase.auth.signInWithOtp({
+            phone,
+            options: {
+                shouldCreateUser: true,  // Create user if doesn't exist
+            }
+        });
+        if (error) throw error;
+        return data;
+    },
+
+    // Verify phone OTP code
+    async verifyPhoneOTP(phone, token) {
+        const { data, error } = await supabase.auth.verifyOtp({
+            phone,
+            token,
+            type: 'sms'
+        });
+        if (error) throw error;
+        return data;
+    },
+
     // Sign out - always succeeds locally even if server session expired
     async signOut() {
         const { error } = await supabase.auth.signOut({ scope: 'local' });
@@ -76,3 +130,4 @@ export const authService = {
 };
 
 export default supabase;
+

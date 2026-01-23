@@ -89,16 +89,27 @@ function Header({ isAuthenticated, onLogout, onHistoryClick }) {
 // LOGIN PAGE
 // ============================================
 function LoginPage({ onLogin }) {
+    // Auth mode: 'password' | 'email-otp' | 'phone-otp'
+    const [authMode, setAuthMode] = useState('password');
     const [isSignUp, setIsSignUp] = useState(false);
+
+    // Form fields
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [phone, setPhone] = useState('');
+    const [otpCode, setOtpCode] = useState('');
+
+    // State
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
+    const [otpSent, setOtpSent] = useState(false);
+
     const navigate = useNavigate();
 
-    const handleSubmit = async (e) => {
+    // Handle password-based authentication
+    const handlePasswordAuth = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
@@ -131,74 +142,312 @@ function LoginPage({ onLogin }) {
         }
     };
 
+    // Handle Email OTP - Send code
+    const handleSendEmailOTP = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+        setMessage('');
+
+        try {
+            await authAPI.sendEmailOTP(email);
+            setOtpSent(true);
+            setMessage('OTP code sent to your email. Please check your inbox.');
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Handle Email OTP - Verify code
+    const handleVerifyEmailOTP = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+
+        try {
+            await authAPI.verifyEmailOTP(email, otpCode);
+            onLogin();
+            navigate('/generate');
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Handle Phone OTP - Send code
+    const handleSendPhoneOTP = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+        setMessage('');
+
+        try {
+            // Ensure phone has country code
+            let formattedPhone = phone.trim();
+            if (!formattedPhone.startsWith('+')) {
+                formattedPhone = '+91' + formattedPhone; // Default to India
+            }
+            await authAPI.sendPhoneOTP(formattedPhone);
+            setOtpSent(true);
+            setMessage('OTP code sent to your phone via SMS.');
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Handle Phone OTP - Verify code
+    const handleVerifyPhoneOTP = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+
+        try {
+            let formattedPhone = phone.trim();
+            if (!formattedPhone.startsWith('+')) {
+                formattedPhone = '+91' + formattedPhone;
+            }
+            await authAPI.verifyPhoneOTP(formattedPhone, otpCode);
+            onLogin();
+            navigate('/generate');
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Reset OTP state when switching modes
+    const switchAuthMode = (mode) => {
+        setAuthMode(mode);
+        setOtpSent(false);
+        setOtpCode('');
+        setError('');
+        setMessage('');
+    };
+
     return (
         <div className="auth-container">
             <div className="card auth-card card-glass">
                 <div className="auth-header">
-                    <h1 className="auth-title">{isSignUp ? 'Create Account' : 'Welcome Back'}</h1>
+                    <h1 className="auth-title">
+                        {authMode === 'password'
+                            ? (isSignUp ? 'Create Account' : 'Welcome Back')
+                            : 'Sign In'
+                        }
+                    </h1>
                     <p className="auth-subtitle">
-                        {isSignUp ? 'Sign up to start generating certificates' : 'Sign in to continue'}
+                        {authMode === 'password'
+                            ? (isSignUp ? 'Sign up to start generating certificates' : 'Sign in to continue')
+                            : authMode === 'email-otp'
+                                ? 'Sign in with Email OTP'
+                                : 'Sign in with Phone OTP'
+                        }
                     </p>
+                </div>
+
+                {/* Auth Mode Tabs */}
+                <div className="auth-tabs mb-lg">
+                    <button
+                        className={`auth-tab ${authMode === 'password' ? 'active' : ''}`}
+                        onClick={() => switchAuthMode('password')}
+                    >
+                        🔐 Password
+                    </button>
+                    <button
+                        className={`auth-tab ${authMode === 'email-otp' ? 'active' : ''}`}
+                        onClick={() => switchAuthMode('email-otp')}
+                    >
+                        ✉️ Email OTP
+                    </button>
+                    <button
+                        className={`auth-tab ${authMode === 'phone-otp' ? 'active' : ''}`}
+                        onClick={() => switchAuthMode('phone-otp')}
+                    >
+                        📱 Phone OTP
+                    </button>
                 </div>
 
                 {error && <div className="alert alert-error">{error}</div>}
                 {message && <div className="alert alert-success">{message}</div>}
 
-                <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label className="form-label">Email Address</label>
-                        <input
-                            type="email"
-                            className="form-input"
-                            placeholder="you@example.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label className="form-label">Password</label>
-                        <input
-                            type="password"
-                            className="form-input"
-                            placeholder="Enter your password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            minLength={6}
-                        />
-                    </div>
-
-                    {isSignUp && (
+                {/* Password Authentication */}
+                {authMode === 'password' && (
+                    <form onSubmit={handlePasswordAuth}>
                         <div className="form-group">
-                            <label className="form-label">Confirm Password</label>
+                            <label className="form-label">Email Address</label>
+                            <input
+                                type="email"
+                                className="form-input"
+                                placeholder="you@example.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Password</label>
                             <input
                                 type="password"
                                 className="form-input"
-                                placeholder="Confirm your password"
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                placeholder="Enter your password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
                                 required
                                 minLength={6}
                             />
                         </div>
-                    )}
 
-                    <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading}>
-                        {loading ? <span className="spinner" /> : (isSignUp ? 'Sign Up' : 'Sign In')}
-                    </button>
-                </form>
+                        {isSignUp && (
+                            <div className="form-group">
+                                <label className="form-label">Confirm Password</label>
+                                <input
+                                    type="password"
+                                    className="form-input"
+                                    placeholder="Confirm your password"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    required
+                                    minLength={6}
+                                />
+                            </div>
+                        )}
 
-                <div className="text-center mt-lg">
-                    <button
-                        type="button"
-                        className="btn-link"
-                        onClick={() => { setIsSignUp(!isSignUp); setError(''); setMessage(''); }}
-                    >
-                        {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
-                    </button>
-                </div>
+                        <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading}>
+                            {loading ? <span className="spinner" /> : (isSignUp ? 'Sign Up' : 'Sign In')}
+                        </button>
+
+                        <div className="text-center mt-lg">
+                            <button
+                                type="button"
+                                className="btn-link"
+                                onClick={() => { setIsSignUp(!isSignUp); setError(''); setMessage(''); }}
+                            >
+                                {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+                            </button>
+                        </div>
+                    </form>
+                )}
+
+                {/* Email OTP Authentication */}
+                {authMode === 'email-otp' && !otpSent && (
+                    <form onSubmit={handleSendEmailOTP}>
+                        <div className="form-group">
+                            <label className="form-label">Email Address</label>
+                            <input
+                                type="email"
+                                className="form-input"
+                                placeholder="you@example.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                            />
+                        </div>
+
+                        <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading}>
+                            {loading ? <span className="spinner" /> : 'Send OTP Code'}
+                        </button>
+                    </form>
+                )}
+
+                {authMode === 'email-otp' && otpSent && (
+                    <form onSubmit={handleVerifyEmailOTP}>
+                        <div className="form-group">
+                            <label className="form-label">Enter OTP Code</label>
+                            <input
+                                type="text"
+                                className="form-input"
+                                placeholder="Enter 6-digit code"
+                                value={otpCode}
+                                onChange={(e) => setOtpCode(e.target.value)}
+                                required
+                                maxLength={6}
+                                style={{ textAlign: 'center', fontSize: '1.5rem', letterSpacing: '0.5rem' }}
+                            />
+                            <p className="text-muted mt-sm" style={{ fontSize: '0.875rem' }}>
+                                Code sent to: {email}
+                            </p>
+                        </div>
+
+                        <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading}>
+                            {loading ? <span className="spinner" /> : 'Verify & Sign In'}
+                        </button>
+
+                        <div className="text-center mt-md">
+                            <button
+                                type="button"
+                                className="btn-link"
+                                onClick={() => { setOtpSent(false); setOtpCode(''); setMessage(''); }}
+                            >
+                                ← Change email or resend code
+                            </button>
+                        </div>
+                    </form>
+                )}
+
+                {/* Phone OTP Authentication */}
+                {authMode === 'phone-otp' && !otpSent && (
+                    <form onSubmit={handleSendPhoneOTP}>
+                        <div className="form-group">
+                            <label className="form-label">Phone Number</label>
+                            <input
+                                type="tel"
+                                className="form-input"
+                                placeholder="+91 9876543210"
+                                value={phone}
+                                onChange={(e) => setPhone(e.target.value)}
+                                required
+                            />
+                            <p className="text-muted mt-sm" style={{ fontSize: '0.875rem' }}>
+                                Include country code (e.g., +91 for India)
+                            </p>
+                        </div>
+
+                        <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading}>
+                            {loading ? <span className="spinner" /> : 'Send OTP via SMS'}
+                        </button>
+                    </form>
+                )}
+
+                {authMode === 'phone-otp' && otpSent && (
+                    <form onSubmit={handleVerifyPhoneOTP}>
+                        <div className="form-group">
+                            <label className="form-label">Enter OTP Code</label>
+                            <input
+                                type="text"
+                                className="form-input"
+                                placeholder="Enter 6-digit code"
+                                value={otpCode}
+                                onChange={(e) => setOtpCode(e.target.value)}
+                                required
+                                maxLength={6}
+                                style={{ textAlign: 'center', fontSize: '1.5rem', letterSpacing: '0.5rem' }}
+                            />
+                            <p className="text-muted mt-sm" style={{ fontSize: '0.875rem' }}>
+                                Code sent to: {phone}
+                            </p>
+                        </div>
+
+                        <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading}>
+                            {loading ? <span className="spinner" /> : 'Verify & Sign In'}
+                        </button>
+
+                        <div className="text-center mt-md">
+                            <button
+                                type="button"
+                                className="btn-link"
+                                onClick={() => { setOtpSent(false); setOtpCode(''); setMessage(''); }}
+                            >
+                                ← Change phone or resend code
+                            </button>
+                        </div>
+                    </form>
+                )}
             </div>
         </div>
     );
