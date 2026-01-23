@@ -13,6 +13,16 @@ function useAuth() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    const clearSession = async () => {
+        try {
+            await authAPI.logout();
+        } catch (err) {
+            console.error('Failed to logout:', err);
+        }
+        setIsAuthenticated(false);
+        setUser(null);
+    };
+
     const fetchUserProfile = async () => {
         try {
             const profile = await usersAPI.getMe();
@@ -21,6 +31,10 @@ function useAuth() {
             return profile;
         } catch (err) {
             console.error('Failed to fetch user profile:', err);
+            // If profile fetch fails (e.g., 500 error, invalid session), clear the session
+            // This prevents the app from getting stuck on "Loading your profile..."
+            console.warn('Session appears invalid, clearing auth state...');
+            await clearSession();
             return null;
         }
     };
@@ -32,9 +46,14 @@ function useAuth() {
                 const authenticated = await authAPI.isAuthenticated();
                 setIsAuthenticated(authenticated);
                 if (authenticated) {
-                    await fetchUserProfile();
+                    const profile = await fetchUserProfile();
+                    // If profile fetch failed, fetchUserProfile already cleared the session
+                    if (!profile) {
+                        setIsAuthenticated(false);
+                    }
                 }
-            } catch {
+            } catch (err) {
+                console.error('Auth check failed:', err);
                 setIsAuthenticated(false);
             } finally {
                 setLoading(false);
@@ -47,7 +66,11 @@ function useAuth() {
             const isAuth = !!session;
             setIsAuthenticated(isAuth);
             if (isAuth) {
-                await fetchUserProfile();
+                const profile = await fetchUserProfile();
+                // If profile fetch failed, don't keep the invalid auth state
+                if (!profile) {
+                    setIsAuthenticated(false);
+                }
             } else {
                 setUser(null);
             }
@@ -59,13 +82,16 @@ function useAuth() {
     const login = async () => {
         setIsAuthenticated(true);
         const profile = await fetchUserProfile();
+        if (!profile) {
+            // Login succeeded at Supabase but backend profile failed
+            // Keep auth state for retry, but log the issue
+            console.warn('Login succeeded but profile fetch failed');
+        }
         return profile;
     };
 
     const logout = async () => {
-        await authAPI.logout();
-        setIsAuthenticated(false);
-        setUser(null);
+        await clearSession();
     };
 
     return { isAuthenticated, user, loading, login, logout };
