@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from routers import auth, templates, certificates, uploads
+from routers import auth, templates, certificates, uploads, admin
 from database import init_db, close_db
 from config import get_settings
 
@@ -69,6 +69,7 @@ app.include_router(auth.router)
 app.include_router(templates.router)
 app.include_router(certificates.router)
 app.include_router(uploads.router)
+app.include_router(admin.router)
 
 
 # Static files for downloads

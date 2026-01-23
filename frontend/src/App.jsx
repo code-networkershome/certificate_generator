@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-route
 import { authAPI, templatesAPI, certificatesAPI, uploadsAPI, API_URL } from './api';
 import CertificateEditor from './components/CertificateEditor';
 import HomePage from './components/HomePage';
+import AdminPage from './components/AdminPage';
 
 // ============================================
 // AUTH CONTEXT
@@ -1658,6 +1659,14 @@ function App() {
                     element={
                         <ProtectedRoute isAuthenticated={isAuthenticated}>
                             <BulkGeneratePage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/admin"
+                    element={
+                        <ProtectedRoute isAuthenticated={isAuthenticated}>
+                            <AdminPage />
                         </ProtectedRoute>
                     }
                 />

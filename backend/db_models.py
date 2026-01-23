@@ -24,6 +24,7 @@ class User(Base):
     email: Mapped[Optional[str]] = mapped_column(String(255), unique=True, nullable=True)
     phone: Mapped[Optional[str]] = mapped_column(String(20), unique=True, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc)
@@ -142,6 +143,14 @@ class Certificate(Base):
     png_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     jpg_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="pending")
+    is_revoked: Mapped[bool] = mapped_column(Boolean, default=False)
+    revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    revoked_by: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True
+    )
+    revoke_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     generated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
