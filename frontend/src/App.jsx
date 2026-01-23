@@ -264,12 +264,6 @@ function LoginPage({ onLogin }) {
                     >
                         ✉️ Email OTP
                     </button>
-                    <button
-                        className={`auth-tab ${authMode === 'phone-otp' ? 'active' : ''}`}
-                        onClick={() => switchAuthMode('phone-otp')}
-                    >
-                        📱 Phone OTP
-                    </button>
                 </div>
 
                 {error && <div className="alert alert-error">{error}</div>}
@@ -385,65 +379,6 @@ function LoginPage({ onLogin }) {
                                 onClick={() => { setOtpSent(false); setOtpCode(''); setMessage(''); }}
                             >
                                 ← Change email or resend code
-                            </button>
-                        </div>
-                    </form>
-                )}
-
-                {/* Phone OTP Authentication */}
-                {authMode === 'phone-otp' && !otpSent && (
-                    <form onSubmit={handleSendPhoneOTP}>
-                        <div className="form-group">
-                            <label className="form-label">Phone Number</label>
-                            <input
-                                type="tel"
-                                className="form-input"
-                                placeholder="+91 9876543210"
-                                value={phone}
-                                onChange={(e) => setPhone(e.target.value)}
-                                required
-                            />
-                            <p className="text-muted mt-sm" style={{ fontSize: '0.875rem' }}>
-                                Include country code (e.g., +91 for India)
-                            </p>
-                        </div>
-
-                        <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading}>
-                            {loading ? <span className="spinner" /> : 'Send OTP via SMS'}
-                        </button>
-                    </form>
-                )}
-
-                {authMode === 'phone-otp' && otpSent && (
-                    <form onSubmit={handleVerifyPhoneOTP}>
-                        <div className="form-group">
-                            <label className="form-label">Enter OTP Code</label>
-                            <input
-                                type="text"
-                                className="form-input"
-                                placeholder="Enter 6-digit code"
-                                value={otpCode}
-                                onChange={(e) => setOtpCode(e.target.value)}
-                                required
-                                maxLength={6}
-                                style={{ textAlign: 'center', fontSize: '1.5rem', letterSpacing: '0.5rem' }}
-                            />
-                            <p className="text-muted mt-sm" style={{ fontSize: '0.875rem' }}>
-                                Code sent to: {phone}
-                            </p>
-                        </div>
-
-                        <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading}>
-                            {loading ? <span className="spinner" /> : 'Verify & Sign In'}
-                        </button>
-
-                        <div className="text-center mt-md">
-                            <button
-                                type="button"
-                                className="btn-link"
-                                onClick={() => { setOtpSent(false); setOtpCode(''); setMessage(''); }}
-                            >
-                                ← Change phone or resend code
                             </button>
                         </div>
                     </form>
