@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from routers import auth, templates, certificates, uploads, admin
+from routers import auth, templates, certificates, uploads, admin, users
 from database import init_db, close_db
 from config import get_settings
 
@@ -22,17 +22,17 @@ async def lifespan(app: FastAPI):
     print("Starting Certificate Generation System...")
     await init_db()
     
-    # Create storage directory (wrap in try-except for read-only filesystems like Vercel)
+    # Create storage directory
+    Path(settings.STORAGE_PATH).mkdir(parents=True, exist_ok=True)
+    Path(settings.TEMPLATES_PATH).mkdir(parents=True, exist_ok=True)
+    Path(settings.STORAGE_PATH + "/uploads").mkdir(parents=True, exist_ok=True)
+    
+    # Auto-seed templates if none exist
     try:
-        Path(settings.STORAGE_PATH).mkdir(parents=True, exist_ok=True)
-        Path(settings.TEMPLATES_PATH).mkdir(parents=True, exist_ok=True)
-        Path(settings.STORAGE_PATH + "/uploads").mkdir(parents=True, exist_ok=True)
-        
-        # Auto-seed templates if none exist
         from seed_templates import seed_templates_if_empty
         await seed_templates_if_empty()
     except Exception as e:
-        print(f"Warning: Filesystem operation failed (expected in some serverless environments): {e}")
+        print(f"Warning: Could not seed templates: {e}")
     
     print("Certificate Generation System started")
     
@@ -70,6 +70,7 @@ app.include_router(templates.router)
 app.include_router(certificates.router)
 app.include_router(uploads.router)
 app.include_router(admin.router)
+app.include_router(users.router)
 
 
 # Static files for downloads

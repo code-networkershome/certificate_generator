@@ -204,4 +204,11 @@ export const uploadsAPI = {
     },
 };
 
+// Users API
+export const usersAPI = {
+    getMe: async () => {
+        return request('/users/me');
+    },
+};
+
 export { getToken, setToken, removeToken, API_URL };

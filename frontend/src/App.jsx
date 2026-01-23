@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { authAPI, templatesAPI, certificatesAPI, uploadsAPI, API_URL } from './api';
+import { authAPI, templatesAPI, certificatesAPI, uploadsAPI, usersAPI, API_URL } from './api';
 import CertificateEditor from './components/CertificateEditor';
 import HomePage from './components/HomePage';
 import AdminPage from './components/AdminPage';
@@ -10,7 +10,19 @@ import AdminPage from './components/AdminPage';
 // ============================================
 function useAuth() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+
+    const fetchUserProfile = async () => {
+        try {
+            const profile = await usersAPI.getMe();
+            setUser(profile);
+            return profile;
+        } catch (err) {
+            console.error('Failed to fetch user profile:', err);
+            return null;
+        }
+    };
 
     useEffect(() => {
         // Check initial auth state
@@ -18,6 +30,9 @@ function useAuth() {
             try {
                 const authenticated = await authAPI.isAuthenticated();
                 setIsAuthenticated(authenticated);
+                if (authenticated) {
+                    await fetchUserProfile();
+                }
             } catch {
                 setIsAuthenticated(false);
             } finally {
@@ -27,20 +42,32 @@ function useAuth() {
         checkAuth();
 
         // Listen for auth state changes
-        const { data: { subscription } } = authAPI.onAuthStateChange((event, session) => {
-            setIsAuthenticated(!!session);
+        const { data: { subscription } } = authAPI.onAuthStateChange(async (event, session) => {
+            const isAuth = !!session;
+            setIsAuthenticated(isAuth);
+            if (isAuth) {
+                await fetchUserProfile();
+            } else {
+                setUser(null);
+            }
         });
 
         return () => subscription?.unsubscribe();
     }, []);
 
-    const login = () => setIsAuthenticated(true);
+    const login = async () => {
+        setIsAuthenticated(true);
+        const profile = await fetchUserProfile();
+        return profile;
+    };
+
     const logout = async () => {
         await authAPI.logout();
         setIsAuthenticated(false);
+        setUser(null);
     };
 
-    return { isAuthenticated, loading, login, logout };
+    return { isAuthenticated, user, loading, login, logout };
 }
 
 // ============================================
@@ -128,13 +155,13 @@ function LoginPage({ onLogin }) {
                 if (result.user && !result.session) {
                     setMessage('Please check your email to confirm your account.');
                 } else {
-                    onLogin();
-                    navigate('/generate');
+                    const profile = await onLogin();
+                    navigate(profile?.is_admin ? '/admin' : '/generate');
                 }
             } else {
                 await authAPI.signIn(email, password);
-                onLogin();
-                navigate('/generate');
+                const profile = await onLogin();
+                navigate(profile?.is_admin ? '/admin' : '/generate');
             }
         } catch (err) {
             setError(err.message);
@@ -169,8 +196,8 @@ function LoginPage({ onLogin }) {
 
         try {
             await authAPI.verifyEmailOTP(email, otpCode);
-            onLogin();
-            navigate('/generate');
+            const profile = await onLogin();
+            navigate(profile?.is_admin ? '/admin' : '/generate');
         } catch (err) {
             setError(err.message);
         } finally {
@@ -213,8 +240,8 @@ function LoginPage({ onLogin }) {
                 formattedPhone = '+91' + formattedPhone;
             }
             await authAPI.verifyPhoneOTP(formattedPhone, otpCode);
-            onLogin();
-            navigate('/generate');
+            const profile = await onLogin();
+            navigate(profile?.is_admin ? '/admin' : '/generate');
         } catch (err) {
             setError(err.message);
         } finally {
@@ -1630,7 +1657,7 @@ function BulkGeneratePage() {
 // APP COMPONENT
 // ============================================
 function App() {
-    const { isAuthenticated, login, logout } = useAuth();
+    const { isAuthenticated, user, login, logout } = useAuth();
 
     return (
         <BrowserRouter>
@@ -1640,7 +1667,7 @@ function App() {
                     path="/login"
                     element={
                         isAuthenticated ? (
-                            <Navigate to="/generate" replace />
+                            <Navigate to={user?.is_admin ? "/admin" : "/generate"} replace />
                         ) : (
                             <LoginPage onLogin={login} />
                         )
