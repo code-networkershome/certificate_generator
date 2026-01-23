@@ -52,6 +52,7 @@ class User(Base):
         CheckConstraint("email IS NOT NULL OR phone IS NOT NULL", name="chk_contact_method"),
         Index("idx_users_email", "email", postgresql_where="email IS NOT NULL"),
         Index("idx_users_phone", "phone", postgresql_where="phone IS NOT NULL"),
+        {"schema": "public"}
     )
 
 
@@ -124,6 +125,7 @@ class Template(Base):
     
     __table_args__ = (
         Index("idx_templates_active", "is_active", postgresql_where="is_active = true"),
+        {"schema": "public"}
     )
 
 
@@ -183,6 +185,7 @@ class Certificate(Base):
         CheckConstraint("status IN ('pending', 'generated', 'failed')", name="chk_status"),
         Index("idx_certificates_user", "user_id"),
         Index("idx_certificates_status", "status"),
+        {"schema": "public"}
     )
 
 
