@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { authAPI, templatesAPI, certificatesAPI, uploadsAPI, API_URL } from './api';
 import CertificateEditor from './components/CertificateEditor';
+import HomePage from './components/HomePage';
 
 // ============================================
 // AUTH CONTEXT
@@ -1449,6 +1450,7 @@ function App() {
     return (
         <BrowserRouter>
             <Routes>
+                <Route path="/" element={<HomePage isAuthenticated={isAuthenticated} />} />
                 <Route
                     path="/login"
                     element={
@@ -1475,7 +1477,6 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
-                <Route path="/" element={<Navigate to={isAuthenticated ? '/generate' : '/login'} replace />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </BrowserRouter>
