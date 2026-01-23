@@ -38,8 +38,14 @@ class User(Base):
     # Relationships
     otp_sessions: Mapped[list["OTPSession"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     certificates: Mapped[list["Certificate"]] = relationship(
+        "Certificate",
         back_populates="user",
-        foreign_keys="Certificate.user_id"
+        primaryjoin="User.id == Certificate.user_id"
+    )
+    revoked_certificates: Mapped[list["Certificate"]] = relationship(
+        "Certificate",
+        back_populates="revoked_by_user",
+        primaryjoin="User.id == Certificate.revoked_by"
     )
     
     __table_args__ = (
@@ -162,14 +168,16 @@ class Certificate(Base):
     
     # Relationships
     user: Mapped[Optional["User"]] = relationship(
+        "User",
         back_populates="certificates",
         foreign_keys=[user_id]
     )
     revoked_by_user: Mapped[Optional["User"]] = relationship(
         "User",
+        back_populates="revoked_certificates",
         foreign_keys=[revoked_by]
     )
-    template: Mapped[Optional["Template"]] = relationship(back_populates="certificates")
+    template: Mapped[Optional["Template"]] = relationship("Template", back_populates="certificates")
     
     __table_args__ = (
         CheckConstraint("status IN ('pending', 'generated', 'failed')", name="chk_status"),

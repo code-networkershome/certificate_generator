@@ -83,7 +83,7 @@ function ProtectedRoute({ children, isAuthenticated }) {
 // ============================================
 // HEADER COMPONENT
 // ============================================
-function Header({ isAuthenticated, onLogout, onHistoryClick }) {
+function Header({ isAuthenticated, user, onLogout, onHistoryClick }) {
     return (
         <header className="header">
             <div className="container header-content">
@@ -100,6 +100,7 @@ function Header({ isAuthenticated, onLogout, onHistoryClick }) {
 
                 {isAuthenticated && (
                     <nav className="nav">
+                        {user?.is_admin && <a href="/admin" className="nav-link admin-link">Admin</a>}
                         <a href="/generate" className="nav-link">Generate</a>
                         <a href="/bulk" className="nav-link">Bulk</a>
                         {onHistoryClick && (
@@ -419,7 +420,7 @@ function LoginPage({ onLogin }) {
 // ============================================
 // GENERATE PAGE
 // ============================================
-function GeneratePage() {
+function GeneratePage({ user }) {
     const [step, setStep] = useState(1);
     const [templates, setTemplates] = useState([]);
     const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -653,6 +654,7 @@ function GeneratePage() {
         <div className="page">
             <Header
                 isAuthenticated={true}
+                user={user}
                 onLogout={async () => { await authAPI.logout(); window.location.href = '/login'; }}
                 onHistoryClick={handleHistoryClick}
             />
@@ -1232,7 +1234,7 @@ function GeneratePage() {
 // ============================================
 // BULK GENERATE PAGE
 // ============================================
-function BulkGeneratePage() {
+function BulkGeneratePage({ user }) {
     const [step, setStep] = useState(1);
     const [templates, setTemplates] = useState([]);
     const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -1350,7 +1352,11 @@ function BulkGeneratePage() {
 
     return (
         <div className="page">
-            <Header isAuthenticated={true} onLogout={async () => { await authAPI.logout(); window.location.href = '/login'; }} />
+            <Header
+                isAuthenticated={true}
+                user={user}
+                onLogout={async () => { await authAPI.logout(); window.location.href = '/login'; }}
+            />
 
             <main className="main-content">
                 <div className="container">
@@ -1677,7 +1683,7 @@ function App() {
                     path="/generate"
                     element={
                         <ProtectedRoute isAuthenticated={isAuthenticated}>
-                            <GeneratePage />
+                            <GeneratePage user={user} />
                         </ProtectedRoute>
                     }
                 />
@@ -1685,7 +1691,7 @@ function App() {
                     path="/bulk"
                     element={
                         <ProtectedRoute isAuthenticated={isAuthenticated}>
-                            <BulkGeneratePage />
+                            <BulkGeneratePage user={user} />
                         </ProtectedRoute>
                     }
                 />
@@ -1693,7 +1699,7 @@ function App() {
                     path="/admin"
                     element={
                         <ProtectedRoute isAuthenticated={isAuthenticated}>
-                            <AdminPage />
+                            <AdminPage user={user} />
                         </ProtectedRoute>
                     }
                 />
