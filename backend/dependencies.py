@@ -215,14 +215,27 @@ async def get_current_user(
             if not existing_user:
                 # Create user with info from token
                 email = token_payload.get("email", f"{user_id}@supabase.user")
+                
+                # Check if this user should be an admin
+                initial_admin = os.environ.get("INITIAL_ADMIN_EMAIL", "").strip()
+                should_be_admin = email.lower() == initial_admin.lower() if initial_admin else False
+                
                 new_user = User(
                     id=uuid.UUID(user_id),
                     email=email,
-                    is_active=True
+                    is_active=True,
+                    is_admin=should_be_admin
                 )
                 db.add(new_user)
                 await db.commit()
-                print(f"Auto-created user in database: {user_id} ({email})")
+                print(f"Auto-created user in database: {user_id} ({email}) - Admin: {should_be_admin}")
+            else:
+                # Check if we should upgrade existing user to admin
+                initial_admin = os.environ.get("INITIAL_ADMIN_EMAIL", "").strip()
+                if initial_admin and existing_user.email and existing_user.email.lower() == initial_admin.lower() and not existing_user.is_admin:
+                    existing_user.is_admin = True
+                    await db.commit()
+                    print(f"Upgraded existing user to admin: {existing_user.email}")
     except Exception as e:
         # Log but don't fail - user might already exist from race condition
         print(f"Note: Could not auto-create user: {e}")
