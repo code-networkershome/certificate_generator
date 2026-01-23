@@ -40,12 +40,12 @@ class User(Base):
     certificates: Mapped[list["Certificate"]] = relationship(
         "Certificate",
         back_populates="user",
-        primaryjoin="User.id == Certificate.user_id"
+        foreign_keys="[Certificate.user_id]"
     )
     revoked_certificates: Mapped[list["Certificate"]] = relationship(
         "Certificate",
         back_populates="revoked_by_user",
-        primaryjoin="User.id == Certificate.revoked_by"
+        foreign_keys="[Certificate.revoked_by]"
     )
     
     __table_args__ = (
