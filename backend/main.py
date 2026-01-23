@@ -54,11 +54,20 @@ app = FastAPI(
 )
 
 
-# CORS Middleware
+# CORS Middleware - Allow specific origins for production
+cors_origins = [
+    "https://certificate-generator-123.vercel.app",
+    "https://certificate-generator.vercel.app",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,  # Set to False because allow_origins=["*"] is used
+    allow_origins=cors_origins,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
