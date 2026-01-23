@@ -216,11 +216,29 @@ TEMPLATES = [
 async def seed_templates():
     """Seed the database with certificate templates"""
     
-    print(f"Templates directory: {TEMPLATES_DIR.absolute()}")
-    print(f"Templates exist: {TEMPLATES_DIR.exists()}")
+    # Try multiple common locations for templates
+    search_dirs = [
+        TEMPLATES_DIR,
+        Path("./templates"),
+        Path("./backend/templates"),
+        Path("/app/templates"),
+        Path("/app/backend/templates")
+    ]
     
-    if TEMPLATES_DIR.exists():
-        print(f"Files in templates dir: {list(TEMPLATES_DIR.glob('*.html'))}")
+    found_dir = None
+    for d in search_dirs:
+        if d.exists() and any(d.glob("*.html")):
+            found_dir = d
+            break
+            
+    if not found_dir:
+        print(f"ERROR: Could not find templates directory with .html files in any of: {[str(d) for d in search_dirs]}")
+        # List current directory to see what's there
+        print(f"Current working directory: {Path('.').absolute()}")
+        print(f"Files in current dir: {list(Path('.').glob('*'))}")
+        return
+
+    print(f"Found templates directory at: {found_dir.absolute()}")
     
     await init_db()
     
@@ -251,7 +269,7 @@ async def seed_templates():
         
         for tmpl_data in TEMPLATES:
             # Read HTML content from file
-            html_file = TEMPLATES_DIR / tmpl_data["file"]
+            html_file = found_dir / tmpl_data["file"]
             
             if html_file.exists():
                 html_content = html_file.read_text(encoding='utf-8')
