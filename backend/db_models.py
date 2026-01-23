@@ -37,7 +37,10 @@ class User(Base):
     
     # Relationships
     otp_sessions: Mapped[list["OTPSession"]] = relationship(back_populates="user", cascade="all, delete-orphan")
-    certificates: Mapped[list["Certificate"]] = relationship(back_populates="user")
+    certificates: Mapped[list["Certificate"]] = relationship(
+        back_populates="user",
+        foreign_keys="[Certificate.user_id]"
+    )
     
     __table_args__ = (
         CheckConstraint("email IS NOT NULL OR phone IS NOT NULL", name="chk_contact_method"),
@@ -158,7 +161,14 @@ class Certificate(Base):
     )
     
     # Relationships
-    user: Mapped[Optional["User"]] = relationship(back_populates="certificates")
+    user: Mapped[Optional["User"]] = relationship(
+        back_populates="certificates",
+        foreign_keys=[user_id]
+    )
+    revoked_by_user: Mapped[Optional["User"]] = relationship(
+        "User",
+        foreign_keys=[revoked_by]
+    )
     template: Mapped[Optional["Template"]] = relationship(back_populates="certificates")
     
     __table_args__ = (
