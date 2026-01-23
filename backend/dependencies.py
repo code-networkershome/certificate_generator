@@ -26,7 +26,8 @@ JWT_ALGORITHM = "HS256"
 # SECURITY SCHEME
 # ============================================
 
-security = HTTPBearer()
+# auto_error=False prevents HTTPBearer from raising 403 before CORS headers are added
+security = HTTPBearer(auto_error=False)
 
 
 # ============================================
@@ -171,7 +172,7 @@ def decode_access_token(token: str) -> dict:
 # ============================================
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
 ) -> str:
     """
     Dependency to extract and validate current user from Supabase JWT token.
@@ -186,6 +187,14 @@ async def get_current_user(
     Raises:
         HTTPException: If authentication fails
     """
+    # Handle missing credentials (when HTTPBearer has auto_error=False)
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    
     token = credentials.credentials
     token_payload = decode_access_token(token)
     
