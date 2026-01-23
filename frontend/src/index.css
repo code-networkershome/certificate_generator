@@ -1477,6 +1477,7 @@ a:hover {
   background: var(--color-accent-gradient);
   border: none;
   margin-bottom: var(--spacing-lg);
+  color: white;
 }
 
 .how-it-works-section .step-content h3 {
