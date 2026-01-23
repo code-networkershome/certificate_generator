@@ -39,7 +39,7 @@ class User(Base):
     otp_sessions: Mapped[list["OTPSession"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     certificates: Mapped[list["Certificate"]] = relationship(
         back_populates="user",
-        foreign_keys="[Certificate.user_id]"
+        foreign_keys="Certificate.user_id"
     )
     
     __table_args__ = (
