@@ -1,5 +1,6 @@
 FROM python:3.11-slim
 
+# CACHE BUSTER: 2026-01-23-v4 - Force rebuild
 # Install system dependencies for WeasyPrint and pdf2image
 RUN apt-get update && apt-get install -y \
     libpango-1.0-0 \
