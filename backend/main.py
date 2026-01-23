@@ -66,6 +66,17 @@ app.add_middleware(
 )
 
 
+# CORS Debug Endpoint - Check if new code is deployed
+@app.get("/cors-test", tags=["Debug"])
+async def cors_test():
+    """Test endpoint to verify CORS configuration is deployed."""
+    return {
+        "cors_version": "v3-wildcard",
+        "allow_origins": "*",
+        "timestamp": "2026-01-23T17:50:00"
+    }
+
+
 # Router Registration
 app.include_router(auth.router)
 app.include_router(templates.router)
