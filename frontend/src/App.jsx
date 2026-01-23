@@ -1663,7 +1663,18 @@ function BulkGeneratePage({ user }) {
 // APP COMPONENT
 // ============================================
 function App() {
-    const { isAuthenticated, user, login, logout } = useAuth();
+    const { isAuthenticated, user, loading, login, logout } = useAuth();
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-[#0f111a]">
+                <div className="text-center">
+                    <div className="spinner mb-lg"></div>
+                    <p className="text-muted">Loading your profile...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <BrowserRouter>
