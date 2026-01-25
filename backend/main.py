@@ -71,9 +71,11 @@ app.add_middleware(
 async def cors_test():
     """Test endpoint to verify CORS configuration is deployed."""
     return {
-        "cors_version": "v3-wildcard",
+        "cors_version": "v4-schema-fix",
         "allow_origins": "*",
-        "timestamp": "2026-01-23T17:50:00"
+        "auto_error": "false",
+        "schema_fix": "removed",
+        "timestamp": "2026-01-23T18:15:00"
     }
 
 
