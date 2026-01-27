@@ -37,15 +37,16 @@ const HistoryModal = ({ isOpen, onClose }) => {
             ></div>
 
             {/* Modal */}
-            <div className="relative w-full max-w-4xl bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden animate-zoom-in border border-gray-100 dark:border-gray-800">
-                <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+            <div className="relative w-full max-w-4xl max-h-[90vh] bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden animate-zoom-in border border-gray-100 dark:border-gray-800 flex flex-col">
+                <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center shrink-0">
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Certificate History</h2>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Review and download your previously generated certificates</p>
                     </div>
                     <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"
+                        onClick={(e) => { e.stopPropagation(); onClose(); }}
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors shrink-0"
+                        aria-label="Close"
                     >
                         <svg className="w-6 h-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -53,7 +54,7 @@ const HistoryModal = ({ isOpen, onClose }) => {
                     </button>
                 </div>
 
-                <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                <div className="p-6 overflow-y-auto custom-scrollbar flex-grow">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-20">
                             <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
