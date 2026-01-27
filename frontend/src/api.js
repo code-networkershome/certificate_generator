@@ -20,6 +20,10 @@ async function request(endpoint, options = {}) {
     const url = `${API_URL}${endpoint}`;
     const token = await getToken();
 
+    if (!token && endpoint !== '/auth/status') {
+        console.warn(`CERTGEN_API: Requesting ${endpoint} without token`);
+    }
+
     const config = {
         ...options,
         headers: {
@@ -29,16 +33,24 @@ async function request(endpoint, options = {}) {
         },
     };
 
-    const response = await fetch(url, config);
+    try {
+        const response = await fetch(url, config);
 
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: 'Request failed' }));
-        const error = new Error(errorData.detail || errorData.error || 'Request failed');
-        error.status = response.status;
-        throw error;
+        if (!response.ok) {
+            console.error(`CERTGEN_API: Response failed for ${endpoint}. Status: ${response.status}`);
+            const errorData = await response.json().catch(() => ({ detail: 'Request failed' }));
+            const error = new Error(errorData.detail || errorData.error || 'Request failed');
+            error.status = response.status;
+            throw error;
+        }
+
+        return response.json();
+    } catch (err) {
+        if (err.name !== 'AbortError' && !err.message?.includes('aborted')) {
+            console.error(`CERTGEN_API: Fetch error for ${endpoint}:`, err.message);
+        }
+        throw err;
     }
-
-    return response.json();
 }
 
 // Auth API - now wraps Supabase auth
