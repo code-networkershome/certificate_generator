@@ -87,12 +87,9 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
-    import traceback
     origin = request.headers.get("origin")
     error_msg = str(exc)
-    error_trace = traceback.format_exc()
     print(f"DEBUG 500 ERROR: {error_msg}")
-    print(error_trace)
     
     response = JSONResponse(
         status_code=500,
@@ -100,8 +97,7 @@ async def generic_exception_handler(request: Request, exc: Exception):
             "detail": "Internal Server Error", 
             "error": True, 
             "debug_message": error_msg,
-            "error_type": type(exc).__name__,
-            "traceback": error_trace
+            "error_type": type(exc).__name__
         }
     )
     if origin in ALLOWED_ORIGINS:
@@ -112,46 +108,6 @@ async def generic_exception_handler(request: Request, exc: Exception):
 
 
 # CORS Debug Endpoint - Check if new code is deployed
-@app.get("/cors-test", tags=["Debug"])
-async def cors_test():
-    """Test endpoint to verify CORS configuration is deployed."""
-    return {
-        "status": "ok",
-        "cors_version": "cors-v9-final-fix",
-        "allowed_origins": ALLOWED_ORIGINS
-    }
-
-@app.get("/debug/db-config", tags=["Debug"])
-async def db_config():
-    """Diagnostic endpoint to check if DATABASE_URL is correctly set."""
-    from database import get_database_url
-    import os
-    
-    db_url = get_database_url()
-    # Mask password for security
-    masked_url = db_url
-    if ":" in db_url and "@" in db_url:
-        try:
-            parts = db_url.split("@")
-            prefix = parts[0]
-            if ":" in prefix:
-                subparts = prefix.split(":")
-                # scheme://user:pass
-                scheme = subparts[0]
-                user = subparts[1]
-                masked_url = f"{scheme}:{user}:****@{parts[1]}"
-        except:
-            masked_url = "Error masking URL"
-            
-    return {
-        "database_url_masked": masked_url,
-        "is_localhost": "localhost" in db_url,
-        "has_asyncpg": "+asyncpg" in db_url,
-        "env_vars_keys": list(os.environ.keys()),
-        "settings_db_url_exists": bool(settings.DATABASE_URL)
-    }
-
-
 # Router Registration
 app.include_router(auth.router)
 app.include_router(templates.router)
