@@ -24,6 +24,7 @@ async def lifespan(app: FastAPI):
     await init_db()
     
     # Create storage directory
+    print(f"DEBUG: STORAGE_TYPE is set to: {settings.STORAGE_TYPE}")
     Path(settings.STORAGE_PATH).mkdir(parents=True, exist_ok=True)
     Path(settings.TEMPLATES_PATH).mkdir(parents=True, exist_ok=True)
     Path(settings.STORAGE_PATH + "/uploads").mkdir(parents=True, exist_ok=True)
@@ -108,6 +109,16 @@ async def generic_exception_handler(request: Request, exc: Exception):
 
 
 # CORS Debug Endpoint - Check if new code is deployed
+@app.get("/cors-test")
+async def cors_test():
+    """Test endpoint to verify CORS configuration is deployed."""
+    return {
+        "status": "ok",
+        "cors_version": "cors-v9-final-fix",
+        "allowed_origins": ALLOWED_ORIGINS
+    }
+
+
 # Router Registration
 app.include_router(auth.router)
 app.include_router(templates.router)
