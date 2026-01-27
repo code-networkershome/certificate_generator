@@ -77,23 +77,33 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     origin = request.headers.get("origin")
     response = JSONResponse(
         status_code=exc.status_code,
-        content={"detail": exc.detail, "error": True}
+        content={"detail": exc.detail, "error": True, "debug_info": "HTTPException"}
     )
     if origin in ALLOWED_ORIGINS:
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Expose-Headers"] = "*"
     return response
 
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
     origin = request.headers.get("origin")
+    error_msg = str(exc)
+    print(f"DEBUG 500 ERROR: {error_msg}")
+    
     response = JSONResponse(
         status_code=500,
-        content={"detail": "Internal Server Error", "error": True}
+        content={
+            "detail": "Internal Server Error", 
+            "error": True, 
+            "debug_message": error_msg,
+            "error_type": type(exc).__name__
+        }
     )
     if origin in ALLOWED_ORIGINS:
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Expose-Headers"] = "*"
     return response
 
 
@@ -103,7 +113,7 @@ async def cors_test():
     """Test endpoint to verify CORS configuration is deployed."""
     return {
         "status": "ok",
-        "cors_version": "cors-v5",
+        "cors_version": "cors-v6-debug",
         "allowed_origins": ALLOWED_ORIGINS
     }
 
