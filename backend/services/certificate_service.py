@@ -72,7 +72,11 @@ class RenderingService:
         }
         
         return template.render(**render_data)
-    
+
+    def render_pdf(self, html_content: str, css_content: str = None) -> bytes:
+        """
+        Render HTML content to PDF using WeasyPrint.
+        """
         try:
             from weasyprint import HTML, CSS
             html = HTML(string=html_content)
