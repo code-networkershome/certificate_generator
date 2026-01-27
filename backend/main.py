@@ -113,8 +113,38 @@ async def cors_test():
     """Test endpoint to verify CORS configuration is deployed."""
     return {
         "status": "ok",
-        "cors_version": "cors-v6-debug",
+        "cors_version": "cors-v7-diagnostic",
         "allowed_origins": ALLOWED_ORIGINS
+    }
+
+@app.get("/debug/db-config", tags=["Debug"])
+async def db_config():
+    """Diagnostic endpoint to check if DATABASE_URL is correctly set."""
+    from database import get_database_url
+    import os
+    
+    db_url = get_database_url()
+    # Mask password for security
+    masked_url = db_url
+    if ":" in db_url and "@" in db_url:
+        try:
+            parts = db_url.split("@")
+            prefix = parts[0]
+            if ":" in prefix:
+                subparts = prefix.split(":")
+                # scheme://user:pass
+                scheme = subparts[0]
+                user = subparts[1]
+                masked_url = f"{scheme}:{user}:****@{parts[1]}"
+        except:
+            masked_url = "Error masking URL"
+            
+    return {
+        "database_url_masked": masked_url,
+        "is_localhost": "localhost" in db_url,
+        "has_asyncpg": "+asyncpg" in db_url,
+        "env_vars_keys": list(os.environ.keys()),
+        "settings_db_url_exists": bool(settings.DATABASE_URL)
     }
 
 
