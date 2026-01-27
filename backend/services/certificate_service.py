@@ -12,6 +12,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from urllib.parse import unquote
 import uuid
 
 from db_models import Template, Certificate
@@ -200,20 +201,30 @@ class StorageService:
         if self.storage_type == "supabase":
             # Get public URL from Supabase Storage
             try:
-                # Get public URL (or create signed URL if bucket is private)
-                response = self.supabase.storage.from_(self.bucket_name).get_public_url(relative_path)
-                return response
+                # In most supabase-py versions, get_public_url returns a string
+                # but in some it returns an object with a .url attribute
+                url = self.supabase.storage.from_(self.bucket_name).get_public_url(relative_path)
+                if hasattr(url, 'public_url'):
+                    return url.public_url
+                if isinstance(url, dict) and 'publicURL' in url:
+                    return url['publicURL']
+                return str(url)
             except Exception as e:
+                print(f"Failed to get public URL: {e}")
                 # Fallback: try to create signed URL for private buckets
                 try:
                     # Create signed URL (valid for 1 hour)
-                    response = self.supabase.storage.from_(self.bucket_name).create_signed_url(
+                    signed_response = self.supabase.storage.from_(self.bucket_name).create_signed_url(
                         path=relative_path,
                         expires_in=3600
                     )
-                    return response.get('signedURL', '')
+                    if isinstance(signed_response, dict):
+                        return signed_response.get('signedURL', '')
+                    if hasattr(signed_response, 'signed_url'):
+                        return signed_response.signed_url
+                    return str(signed_response)
                 except:
-                    raise Exception(f"Failed to get download URL from Supabase: {str(e)}")
+                    raise Exception(f"Failed to get download URL from Supabase")
         else:
             # Local storage - return relative URL
             return f"{base_url}/downloads/{relative_path}"
@@ -233,6 +244,44 @@ class StorageService:
                 return False
         else:
             return (self.storage_path / relative_path).exists()
+
+    def get_file(self, relative_path: str) -> bytes:
+        """Get file bytes from storage"""
+        if self.storage_type == "supabase":
+            try:
+                response = self.supabase.storage.from_(self.bucket_name).download(relative_path)
+                return response
+            except Exception as e:
+                raise Exception(f"Failed to download from Supabase: {str(e)}")
+        else:
+            file_path = self.storage_path / relative_path
+            if not file_path.exists():
+                raise FileNotFoundError(f"File not found: {file_path}")
+            with open(file_path, 'rb') as f:
+                return f.read()
+
+    def _get_relative_path_from_url(self, url: str) -> Optional[str]:
+        """Extract relative path from a download URL"""
+        if not url:
+            return None
+            
+        if self.storage_type == "supabase":
+            if '/public/' in url:
+                # https://.../public/certificates/2026/01/27/cert.pdf
+                path = unquote(url.split('/public/')[-1])
+                if path.startswith(self.bucket_name + "/"):
+                    return path[len(self.bucket_name)+1:]
+                return path
+            elif '/sign/' in url:
+                # Handle signed URLs if needed
+                path = unquote(url.split('?')[0].split('/')[-1])
+                return path
+            return None
+        else:
+            # Local: http://localhost:8000/downloads/2026/01/27/cert.pdf
+            if '/downloads/' in url:
+                return unquote(url.split('/downloads/')[-1])
+            return None
 
 
 class CertificateService:

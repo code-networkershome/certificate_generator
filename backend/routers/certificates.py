@@ -60,47 +60,68 @@ async def generate_unique_certificate_id(db: AsyncSession) -> str:
 def _create_bulk_zip(successful_results: List[BulkCertificateResult]) -> Optional[str]:
     """Helper to create a ZIP of generated certificates."""
     from config import get_settings
+    from services.certificate_service import storage_service
     settings = get_settings()
     
     # Create unique zip filename
     zip_filename = f"bulk-certificates-{uuid.uuid4().hex[:8]}.zip"
+    
+    # We still need a local place to save the ZIP temporarily
     storage_path = Path(settings.STORAGE_PATH)
+    storage_path.mkdir(parents=True, exist_ok=True)
     zip_path = storage_path / zip_filename
     
+    files_added = 0
     try:
         with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
             for result in successful_results:
                 if result.success and result.download_urls:
                     for fmt, url in result.download_urls.items():
-                        # Extract relative path
-                        # Local: http://localhost:8000/downloads/2026/01/27/cert.pdf
-                        # Supabase: https://.../storage/v1/object/public/certificates/2026/01/27/cert.pdf
-                        
-                        relative_path = None
-                        if '/downloads/' in url:
-                            relative_path = url.split('/downloads/')[-1]
-                        elif '/public/' in url:
-                            # Handling Supabase public URLs if possible
-                            relative_path = url.split('/public/')[-1]
-                            # Remove bucket name if present
-                            bucket = settings.SUPABASE_STORAGE_BUCKET or "certificates"
-                            if relative_path.startswith(bucket + "/"):
-                                relative_path = relative_path[len(bucket)+1:]
+                        # Extract relative path using StorageService helper
+                        relative_path = storage_service._get_relative_path_from_url(url)
+                        print(f"ZIP: Processing result={result.certificate_id} fmt={fmt} url={url} rel={relative_path}")
                         
                         if relative_path:
-                            file_path = storage_path / relative_path
-                            if file_path.exists():
-                                arc_name = f"{result.certificate_id}.{fmt}"
-                                zipf.write(file_path, arc_name)
-                                print(f"ZIP: Added {arc_name}")
-                            else:
-                                print(f"ZIP: File not found at {file_path}")
+                            try:
+                                # Get file bytes (from local or Supabase)
+                                file_bytes = storage_service.get_file(relative_path)
+                                if file_bytes:
+                                    arc_name = f"{result.certificate_id}.{fmt}"
+                                    zipf.writestr(arc_name, file_bytes)
+                                    files_added += 1
+                                    print(f"ZIP: Successfully added {arc_name} ({len(file_bytes)} bytes)")
+                                else:
+                                    print(f"ZIP: File bytes empty for {relative_path}")
+                            except Exception as e:
+                                print(f"ZIP: Failed to add {relative_path}: {e}")
+                        else:
+                            print(f"ZIP: Could not determine relative path from URL: {url}")
         
-        return f"/downloads/{zip_filename}"
+        print(f"ZIP: Finished creating archive. Total files added: {files_added}")
+        
+        if files_added == 0:
+            print("ZIP: WARNING - No files were added to the ZIP archive.")
+        
+        # If using Supabase, upload the ZIP itself to Supabase
+        if settings.STORAGE_TYPE == "supabase" and files_added > 0:
+            with open(zip_path, 'rb') as f:
+                zip_bytes = f.read()
+            zip_rel_path = f"bulk_zips/{zip_filename}"
+            
+            storage_service.supabase.storage.from_(storage_service.bucket_name).upload(
+                path=zip_rel_path,
+                file=zip_bytes,
+                file_options={"content-type": "application/zip"}
+            )
+            return storage_service.get_download_url(zip_rel_path)
+        
+        # Return local path only if local exists or it's not supabase
+        if files_added > 0:
+            return f"/downloads/{zip_filename}"
+        return None
     except Exception as e:
         print(f"Error creating ZIP: {e}")
         return None
-
 
 @router.post(
     "/generate",
