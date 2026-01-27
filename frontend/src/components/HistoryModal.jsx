@@ -29,26 +29,26 @@ const HistoryModal = ({ isOpen, onClose }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center p-4 pt-24 overflow-hidden">
             {/* Backdrop */}
             <div
-                className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm animate-fade-in"
+                className="absolute inset-0 bg-gray-900/70 backdrop-blur-sm animate-fade-in"
                 onClick={onClose}
             ></div>
 
             {/* Modal */}
-            <div className="relative w-full max-w-4xl max-h-[90vh] bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden animate-zoom-in border border-gray-100 dark:border-gray-800 flex flex-col">
-                <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center shrink-0">
+            <div className="relative w-full max-w-4xl max-h-[85vh] bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden animate-zoom-in border border-gray-100 dark:border-gray-800 flex flex-col">
+                <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center shrink-0 bg-white/50 dark:bg-gray-900/50 backdrop-blur-md">
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Certificate History</h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Review and download your previously generated certificates</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Review and download your previous generations</p>
                     </div>
                     <button
                         onClick={(e) => { e.stopPropagation(); onClose(); }}
-                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors shrink-0"
+                        className="p-3 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900/50 rounded-2xl transition-all shrink-0 border border-primary-100 dark:border-primary-800 shadow-sm"
                         aria-label="Close"
                     >
-                        <svg className="w-6 h-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
@@ -117,6 +117,15 @@ const HistoryModal = ({ isOpen, onClose }) => {
                             </table>
                         </div>
                     )}
+                </div>
+
+                <div className="p-4 border-t border-gray-100 dark:border-gray-800 flex justify-end shrink-0">
+                    <button
+                        onClick={onClose}
+                        className="px-6 py-2 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                    >
+                        Close Window
+                    </button>
                 </div>
             </div>
         </div>
