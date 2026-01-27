@@ -13,6 +13,8 @@ settings = get_settings()
 
 router = APIRouter(prefix="/upload", tags=["uploads"])
 
+print(f"DEBUG: uploads.py - settings.STORAGE_TYPE is: {settings.STORAGE_TYPE}")
+
 # Initialize Supabase client if using Supabase storage
 supabase_client = None
 if settings.STORAGE_TYPE == "supabase":

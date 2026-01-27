@@ -32,8 +32,10 @@ async function request(endpoint, options = {}) {
     const response = await fetch(url, config);
 
     if (!response.ok) {
-        const error = await response.json().catch(() => ({ detail: 'Request failed' }));
-        throw new Error(error.detail || error.error || 'Request failed');
+        const errorData = await response.json().catch(() => ({ detail: 'Request failed' }));
+        const error = new Error(errorData.detail || errorData.error || 'Request failed');
+        error.status = response.status;
+        throw error;
     }
 
     return response.json();
@@ -118,7 +120,7 @@ export const certificatesAPI = {
         return request('/certificate/bulk-generate', {
             method: 'POST',
             body: JSON.stringify({
-                template_id: templateId,
+                template_id: String(templateId),
                 certificates,
                 output_formats: outputFormats,
             }),
@@ -127,7 +129,7 @@ export const certificatesAPI = {
 
     bulkGenerateCSV: async (templateId, file, outputFormats = ['pdf']) => {
         const formData = new FormData();
-        formData.append('template_id', templateId);
+        formData.append('template_id', String(templateId));
         formData.append('output_formats', outputFormats.join(','));
         formData.append('file', file);
 
@@ -142,7 +144,7 @@ export const certificatesAPI = {
 
         if (!response.ok) {
             const error = await response.json().catch(() => ({ detail: 'Upload failed' }));
-            throw new Error(error.detail || 'Upload failed');
+            throw new Error(error.detail || error.error || 'Upload failed');
         }
 
         return response.json();
@@ -156,7 +158,7 @@ export const certificatesAPI = {
         return request('/certificate/preview', {
             method: 'POST',
             body: JSON.stringify({
-                template_id: templateId,
+                template_id: String(templateId),
                 certificate_data: certificateData,
                 element_positions: elementPositions,
                 element_styles: elementStyles
@@ -168,7 +170,7 @@ export const certificatesAPI = {
         return request('/certificate/finalize', {
             method: 'POST',
             body: JSON.stringify({
-                template_id: templateId,
+                template_id: String(templateId),
                 certificate_data: certificateData,
                 element_positions: elementPositions,
                 element_styles: elementStyles,
@@ -176,6 +178,30 @@ export const certificatesAPI = {
             }),
         });
     },
+};
+
+// Admin API
+export const adminAPI = {
+    getStats: async () => {
+        return request('/admin/stats');
+    },
+    getCertificates: async (page = 1, limit = 20) => {
+        return request(`/admin/certificates?page=${page}&limit=${limit}`);
+    },
+    getUsers: async (page = 1, limit = 20) => {
+        return request(`/admin/users?page=${page}&limit=${limit}`);
+    },
+    revokeCertificate: async (id, reason) => {
+        return request(`/admin/certificates/${id}/revoke`, {
+            method: 'POST',
+            body: JSON.stringify({ reason })
+        });
+    },
+    toggleAdmin: async (userId) => {
+        return request(`/admin/users/${userId}/toggle-admin`, {
+            method: 'POST'
+        });
+    }
 };
 
 // Uploads API

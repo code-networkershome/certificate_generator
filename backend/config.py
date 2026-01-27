@@ -3,7 +3,7 @@ Environment Configuration for Certificate Generation System
 Loads settings from environment variables with validation
 """
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 from typing import Optional
 from functools import lru_cache
@@ -19,8 +19,8 @@ class Settings(BaseSettings):
     
     # Database
     DATABASE_URL: str = Field(
-        default="postgresql+asyncpg://postgres:postgres@localhost:5432/certificates",
-        description="PostgreSQL connection URL"
+        default="sqlite+aiosqlite:///./certificates.db",
+        description="Database connection URL"
     )
     
     # JWT
@@ -79,11 +79,12 @@ class Settings(BaseSettings):
     SMTP_FROM_NAME: str = "Certificate Generator"
     SMTP_USE_TLS: bool = True
     
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
-        extra = "ignore"  # Ignore extra environment variables
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="ignore"
+    )
 
 
 @lru_cache()

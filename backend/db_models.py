@@ -4,8 +4,7 @@ SQLAlchemy ORM Models for Certificate Generation System
 
 from datetime import datetime, timezone
 from typing import Optional
-from sqlalchemy import String, Boolean, DateTime, Integer, Text, ForeignKey, Index, CheckConstraint
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import String, Boolean, DateTime, Integer, Text, ForeignKey, Index, CheckConstraint, JSON, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 import uuid
 
@@ -50,8 +49,8 @@ class User(Base):
     
     __table_args__ = (
         CheckConstraint("email IS NOT NULL OR phone IS NOT NULL", name="chk_contact_method"),
-        Index("idx_users_email", "email", postgresql_where="email IS NOT NULL"),
-        Index("idx_users_phone", "phone", postgresql_where="phone IS NOT NULL"),
+        Index("idx_users_email", "email"),
+        Index("idx_users_phone", "phone"),
     )
 
 
@@ -123,7 +122,7 @@ class Template(Base):
     certificates: Mapped[list["Certificate"]] = relationship(back_populates="template")
     
     __table_args__ = (
-        Index("idx_templates_active", "is_active", postgresql_where="is_active = true"),
+        Index("idx_templates_active", "is_active"),
     )
 
 
@@ -147,7 +146,7 @@ class Certificate(Base):
         ForeignKey("templates.id", ondelete="SET NULL"),
         nullable=True
     )
-    certificate_data: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    certificate_data: Mapped[dict] = mapped_column(JSON, nullable=False)
     pdf_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     png_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     jpg_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)

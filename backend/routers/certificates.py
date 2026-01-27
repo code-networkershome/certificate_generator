@@ -3,7 +3,7 @@ Certificates Router - Certificate generation endpoints
 """
 
 from datetime import datetime, timezone
-from typing import List
+from typing import List, Optional
 import csv
 import io
 import random
@@ -54,6 +54,51 @@ async def generate_unique_certificate_id(db: AsyncSession) -> str:
     # Fallback with longer random
     random_part = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
     return f"NH-{year}-{random_part}"
+
+
+def _create_bulk_zip(successful_results: List[BulkCertificateResult]) -> Optional[str]:
+    """Helper to create a ZIP of generated certificates."""
+    from config import get_settings
+    settings = get_settings()
+    
+    # Create unique zip filename
+    zip_filename = f"bulk-certificates-{uuid.uuid4().hex[:8]}.zip"
+    storage_path = Path(settings.STORAGE_PATH)
+    zip_path = storage_path / zip_filename
+    
+    try:
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for result in successful_results:
+                if result.success and result.download_urls:
+                    for fmt, url in result.download_urls.items():
+                        # Extract relative path
+                        # Local: http://localhost:8000/downloads/2026/01/27/cert.pdf
+                        # Supabase: https://.../storage/v1/object/public/certificates/2026/01/27/cert.pdf
+                        
+                        relative_path = None
+                        if '/downloads/' in url:
+                            relative_path = url.split('/downloads/')[-1]
+                        elif '/public/' in url:
+                            # Handling Supabase public URLs if possible
+                            relative_path = url.split('/public/')[-1]
+                            # Remove bucket name if present
+                            bucket = settings.SUPABASE_STORAGE_BUCKET or "certificates"
+                            if relative_path.startswith(bucket + "/"):
+                                relative_path = relative_path[len(bucket)+1:]
+                        
+                        if relative_path:
+                            file_path = storage_path / relative_path
+                            if file_path.exists():
+                                arc_name = f"{result.certificate_id}.{fmt}"
+                                zipf.write(file_path, arc_name)
+                                print(f"ZIP: Added {arc_name}")
+                            else:
+                                print(f"ZIP: File not found at {file_path}")
+        
+        return f"/downloads/{zip_filename}"
+    except Exception as e:
+        print(f"Error creating ZIP: {e}")
+        return None
 
 
 @router.post(
@@ -131,6 +176,14 @@ async def bulk_generate_certificates(
 ) -> BulkGenerateResponse:
     """Generate multiple certificates in bulk."""
     
+    # Implement bulk limit to prevent timeouts
+    MAX_BULK_LIMIT = 50
+    if len(request.certificates) > MAX_BULK_LIMIT:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Bulk generation limit exceeded. Maximum {MAX_BULK_LIMIT} certificates allowed per request."
+        )
+    
     # Get template
     template = await rendering_service.get_template(db, request.template_id)
     if not template:
@@ -177,8 +230,9 @@ async def bulk_generate_certificates(
             successful += 1
             
         except Exception as e:
+            cert_id = cert_dict.get('certificate_id') or 'UNKNOWN'
             results.append(BulkCertificateResult(
-                certificate_id=cert_dict.get('certificate_id') or 'UNKNOWN',
+                certificate_id=cert_id,
                 success=False,
                 error=str(e)
             ))
@@ -187,39 +241,7 @@ async def bulk_generate_certificates(
     await db.commit()
     
     # Create ZIP of all successful certificates
-    zip_url = None
-    if successful > 0:
-        # Create unique zip filename
-        zip_filename = f"bulk-certificates-{uuid.uuid4().hex[:8]}.zip"
-        zip_path = f"/app/storage/{zip_filename}"
-        
-        try:
-            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                for result in results:
-                    if result.success and result.download_urls:
-                        for fmt, url in result.download_urls.items():
-                            # URL is like: http://localhost:8000/downloads/2026/01/20/cert.pdf
-                            # Extract the path after /downloads/
-                            if '/downloads/' in url:
-                                relative_path = url.split('/downloads/')[-1]
-                                file_path = f"/app/storage/{relative_path}"
-                            else:
-                                # Fallback for relative URLs
-                                file_path = f"/app/storage/{url.lstrip('/')}"
-                            
-                            print(f"ZIP: Looking for file at {file_path}")
-                            if os.path.exists(file_path):
-                                # Add to zip with meaningful name
-                                arc_name = f"{result.certificate_id}.{fmt}"
-                                zipf.write(file_path, arc_name)
-                                print(f"ZIP: Added {arc_name}")
-                            else:
-                                print(f"ZIP: File not found at {file_path}")
-            
-            zip_url = f"/downloads/{zip_filename}"
-        except Exception as e:
-            # Log error but don't fail the response
-            print(f"Error creating ZIP: {e}")
+    zip_url = _create_bulk_zip([r for r in results if r.success])
     
     return BulkGenerateResponse(
         success=failed == 0,
@@ -267,7 +289,17 @@ async def bulk_generate_from_csv(
     # Read CSV
     content = await file.read()
     csv_file = io.StringIO(content.decode('utf-8'))
-    reader = csv.DictReader(csv_file)
+    
+    # Count rows before processing (using a list to avoid double-reading if possible, 
+    # but for simplicity we'll just check the count)
+    rows = list(csv.DictReader(csv_file))
+    
+    MAX_BULK_LIMIT = 50
+    if len(rows) > MAX_BULK_LIMIT:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Bulk generation limit exceeded. Maximum {MAX_BULK_LIMIT} rows allowed per CSV."
+        )
     
     # Required columns
     required_cols = ['student_name', 'course_name', 'issue_date', 'certificate_id', 'issuing_authority']
@@ -276,7 +308,7 @@ async def bulk_generate_from_csv(
     successful = 0
     failed = 0
     
-    for row in reader:
+    for row in rows:
         try:
             # Validate required columns
             for col in required_cols:
@@ -330,13 +362,16 @@ async def bulk_generate_from_csv(
     
     await db.commit()
     
+    # Create ZIP of all successful certificates
+    zip_url = _create_bulk_zip([r for r in results if r.success])
+    
     return BulkGenerateResponse(
         success=failed == 0,
         total=successful + failed,
         successful=successful,
         failed=failed,
         results=results,
-        zip_download_url="/downloads/bulk-certificates.zip" if successful > 0 else None
+        zip_download_url=zip_url
     )
 
 

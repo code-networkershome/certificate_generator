@@ -36,6 +36,14 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"Warning: Could not seed templates: {e}")
     
+    # Security Check: Ensure JWT secret is not default in production
+    if not settings.DEBUG and settings.JWT_SECRET_KEY == "change-this-in-production-use-256-bit-key":
+        print("CRITICAL SECURITY ERROR: JWT_SECRET_KEY is set to default value in production!")
+        print("Please set a secure JWT_SECRET_KEY in your environment variables.")
+        # We don't exit immediately to allow logs to be captured, but we should block startup if possible
+        # However, for now, we'll just log it clearly. In a stricter environment, we'd raise an exception.
+        # raise RuntimeError("Insecure JWT_SECRET_KEY in production")
+    
     print("Certificate Generation System started")
     
     yield

@@ -9,9 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, List, Dict
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from weasyprint import HTML, CSS
-from pdf2image import convert_from_bytes
-from PIL import Image
+from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 import uuid
@@ -75,50 +73,47 @@ class RenderingService:
         
         return template.render(**render_data)
     
-    def render_pdf(self, html_content: str, css_content: Optional[str] = None) -> bytes:
-        """
-        Render HTML to PDF using WeasyPrint.
-        Returns PDF as bytes.
-        """
-        html = HTML(string=html_content)
-        
-        stylesheets = []
-        if css_content:
-            stylesheets.append(CSS(string=css_content))
-        
-        return html.write_pdf(stylesheets=stylesheets, presentational_hints=True)
+        try:
+            from weasyprint import HTML, CSS
+            html = HTML(string=html_content)
+            stylesheets = []
+            if css_content:
+                stylesheets.append(CSS(string=css_content))
+            return html.write_pdf(stylesheets=stylesheets, presentational_hints=True)
+        except Exception as e:
+            error_str = str(e)
+            print(f"CRITICAL ERROR: PDF generation failed: {error_str}")
+            raise HTTPException(
+                status_code=500, 
+                detail=f"PDF generation failed: {error_str}. Ensure system dependencies (libpango, libcairo, etc.) are installed."
+            )
     
-    def convert_to_image(
-        self,
-        pdf_bytes: bytes,
-        format: str,
-        dpi: int = 300
-    ) -> bytes:
+    def convert_to_image(self, pdf_bytes: bytes, format: str, dpi: int = 300) -> bytes:
         """
         Convert PDF to image format.
-        Supports PNG, JPG, JPEG.
         """
-        # Convert PDF to PIL Image
-        images = convert_from_bytes(pdf_bytes, dpi=dpi)
-        
-        if not images:
-            raise ValueError("Failed to convert PDF to image")
-        
-        # Get first page (certificate is single page)
-        image = images[0]
-        
-        # Save to bytes
-        output = io.BytesIO()
-        
-        if format.lower() in ['jpg', 'jpeg']:
-            # Convert RGBA to RGB for JPEG
-            if image.mode == 'RGBA':
-                image = image.convert('RGB')
-            image.save(output, format='JPEG', quality=95)
-        else:
-            image.save(output, format='PNG')
-        
-        return output.getvalue()
+        try:
+            from pdf2image import convert_from_bytes
+            images = convert_from_bytes(pdf_bytes, dpi=dpi)
+            if not images:
+                raise ValueError("Failed to convert PDF to image: No images returned from converter")
+            
+            image = images[0]
+            output = io.BytesIO()
+            if format.lower() in ['jpg', 'jpeg']:
+                if image.mode == 'RGBA':
+                    image = image.convert('RGB')
+                image.save(output, format='JPEG', quality=95)
+            else:
+                image.save(output, format='PNG')
+            return output.getvalue()
+        except Exception as e:
+            error_str = str(e)
+            print(f"CRITICAL ERROR: Image conversion failed: {error_str}")
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Image conversion failed: {error_str}. Ensure poppler-utils is installed."
+            )
 
 
 class StorageService:

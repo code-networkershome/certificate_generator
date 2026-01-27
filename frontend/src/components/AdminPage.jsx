@@ -1,58 +1,34 @@
 import { useState, useEffect } from 'react';
-import { API_URL } from '../api';
-import { authService } from '../supabase';
+import { adminAPI } from '../api';
 
-/**
- * AdminPage - Certificate Management Dashboard
- */
 export default function AdminPage() {
     const [stats, setStats] = useState(null);
     const [certificates, setCertificates] = useState([]);
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [isForbidden, setIsForbidden] = useState(false);
     const [activeTab, setActiveTab] = useState('certificates');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [revokeModal, setRevokeModal] = useState(null);
     const [revokeReason, setRevokeReason] = useState('');
 
-    // Fetch data on mount
     useEffect(() => {
         fetchStats();
-        fetchCertificates();
     }, []);
 
     useEffect(() => {
-        if (activeTab === 'certificates') {
-            fetchCertificates();
-        } else if (activeTab === 'users') {
-            fetchUsers();
-        }
+        if (activeTab === 'certificates') fetchCertificates();
+        else if (activeTab === 'users') fetchUsers();
     }, [activeTab, page]);
-
-    const getAuthHeaders = async () => {
-        const token = await authService.getAccessToken();
-        return {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        };
-    };
 
     const fetchStats = async () => {
         try {
-            const headers = await getAuthHeaders();
-            const response = await fetch(`${API_URL}/admin/stats`, { headers });
-            if (!response.ok) {
-                if (response.status === 403) {
-                    setError('You do not have admin access');
-                    return;
-                }
-                throw new Error('Failed to fetch stats');
-            }
-            const data = await response.json();
+            const data = await adminAPI.getStats();
             setStats(data);
         } catch (err) {
+            if (err.status === 403) setIsForbidden(true);
             setError(err.message);
         }
     };
@@ -60,13 +36,11 @@ export default function AdminPage() {
     const fetchCertificates = async () => {
         setLoading(true);
         try {
-            const headers = await getAuthHeaders();
-            const response = await fetch(`${API_URL}/admin/certificates?page=${page}&limit=20`, { headers });
-            if (!response.ok) throw new Error('Failed to fetch certificates');
-            const data = await response.json();
+            const data = await adminAPI.getCertificates(page, 20);
             setCertificates(data.certificates);
             setTotalPages(data.pages);
         } catch (err) {
+            if (err.status === 403) setIsForbidden(true);
             setError(err.message);
         } finally {
             setLoading(false);
@@ -76,28 +50,20 @@ export default function AdminPage() {
     const fetchUsers = async () => {
         setLoading(true);
         try {
-            const headers = await getAuthHeaders();
-            const response = await fetch(`${API_URL}/admin/users?page=${page}&limit=20`, { headers });
-            if (!response.ok) throw new Error('Failed to fetch users');
-            const data = await response.json();
+            const data = await adminAPI.getUsers(page, 20);
             setUsers(data.users);
             setTotalPages(Math.ceil(data.total / 20));
         } catch (err) {
+            if (err.status === 403) setIsForbidden(true);
             setError(err.message);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleRevoke = async (certificateId) => {
+    const handleRevoke = async (id) => {
         try {
-            const headers = await getAuthHeaders();
-            const response = await fetch(`${API_URL}/admin/certificates/${certificateId}/revoke`, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({ reason: revokeReason })
-            });
-            if (!response.ok) throw new Error('Failed to revoke certificate');
+            await adminAPI.revokeCertificate(id, revokeReason);
             setRevokeModal(null);
             setRevokeReason('');
             fetchCertificates();
@@ -107,312 +73,159 @@ export default function AdminPage() {
         }
     };
 
-    const handleRestore = async (certificateId) => {
-        if (!confirm('Are you sure you want to restore this certificate?')) return;
-        try {
-            const headers = await getAuthHeaders();
-            const response = await fetch(`${API_URL}/admin/certificates/${certificateId}/restore`, {
-                method: 'POST',
-                headers
-            });
-            if (!response.ok) throw new Error('Failed to restore certificate');
-            fetchCertificates();
-            fetchStats();
-        } catch (err) {
-            setError(err.message);
-        }
-    };
-
     const handleToggleAdmin = async (userId) => {
-        if (!confirm('Are you sure you want to toggle admin status for this user?')) return;
+        if (!confirm('Toggle admin status?')) return;
         try {
-            const headers = await getAuthHeaders();
-            const response = await fetch(`${API_URL}/admin/users/${userId}/toggle-admin`, {
-                method: 'POST',
-                headers
-            });
-            if (!response.ok) throw new Error('Failed to toggle admin status');
+            await adminAPI.toggleAdmin(userId);
             fetchUsers();
         } catch (err) {
             setError(err.message);
         }
     };
 
-    if (error === 'You do not have admin access' || (user && !user.is_admin)) {
+    if (isForbidden) {
         return (
-            <div className="admin-page">
-                <div className="container">
-                    <div className="card text-center" style={{ maxWidth: '500px', margin: '100px auto' }}>
-                        <h2 style={{ color: '#ef4444' }}>🚫 Admin Access Required</h2>
-                        <p className="text-muted">You are logged in as <strong>{user?.email}</strong>, but this account does not have administrator privileges.</p>
-                        <p className="mt-md">Please ensure you have set the <code>INITIAL_ADMIN_EMAIL</code> in your Render environment variables.</p>
-                        <a href="/generate" className="btn btn-primary mt-lg">Go to Dashboard</a>
-                    </div>
-                </div>
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 animate-fade-in-up">
+                <div className="w-20 h-20 bg-red-100 dark:bg-red-900/20 text-red-600 rounded-full flex items-center justify-center mb-6 text-3xl">🚫</div>
+                <h2 className="text-3xl font-extrabold dark:text-white mb-4">Access Denied</h2>
+                <p className="text-gray-500 max-w-md">Admin privileges are required to view this dashboard. Please contact the system administrator.</p>
+                <a href="/generate" className="btn-primary mt-8">Return to Dashboard</a>
             </div>
         );
     }
 
     return (
-        <div className="admin-page">
-            <header className="header">
-                <div className="container header-content">
-                    <a href="/" className="logo">
-                        <div className="logo-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                <polyline points="14 2 14 8 20 8" />
-                                <path d="M9 15l2 2 4-4" />
-                            </svg>
-                        </div>
-                        <span>CertGen Admin</span>
-                    </a>
-                    <nav className="nav">
-                        <a href="/generate" className="nav-link">Dashboard</a>
-                        <a href="/" className="nav-link">Home</a>
-                    </nav>
+        <div className="space-y-10 animate-fade-in-up">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-4xl font-extrabold dark:text-white">Admin Dashboard</h1>
+                    <p className="text-gray-500 dark:text-gray-400 mt-1">Manage certificates and system users</p>
                 </div>
-            </header>
+            </div>
 
-            <main className="main-content">
-                <div className="container">
-                    <h1 className="mb-xl">Admin Dashboard</h1>
-
-                    {error && <div className="alert alert-error mb-lg">{error}</div>}
-
-                    {/* Stats Cards */}
-                    {stats && (
-                        <div className="admin-stats-grid mb-xl">
-                            <div className="stat-card">
-                                <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-                                    📄
-                                </div>
-                                <div className="stat-info">
-                                    <span className="stat-value">{stats.total_certificates}</span>
-                                    <span className="stat-label">Total Certificates</span>
-                                </div>
+            {/* Stats */}
+            {stats && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {[
+                        { label: 'Total Issued', value: stats.total_certificates, color: 'text-primary-600', bg: 'bg-primary-50 dark:bg-primary-900/20' },
+                        { label: 'Active', value: stats.active_certificates, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20' },
+                        { label: 'Revoked', value: stats.revoked_certificates, color: 'text-red-500', bg: 'bg-red-50 dark:bg-red-900/20' },
+                        { label: 'Total Users', value: stats.total_users, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/20' }
+                    ].map((s, i) => (
+                        <div key={i} className="card-premium p-6 flex items-center gap-4">
+                            <div className={`w-12 h-12 ${s.bg} rounded-xl flex items-center justify-center text-xl font-bold ${s.color}`}>
+                                {s.label.slice(0, 1)}
                             </div>
-                            <div className="stat-card">
-                                <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #10b981, #22c55e)' }}>
-                                    ✓
-                                </div>
-                                <div className="stat-info">
-                                    <span className="stat-value">{stats.active_certificates}</span>
-                                    <span className="stat-label">Active</span>
-                                </div>
-                            </div>
-                            <div className="stat-card">
-                                <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #ef4444, #f97316)' }}>
-                                    ✗
-                                </div>
-                                <div className="stat-info">
-                                    <span className="stat-value">{stats.revoked_certificates}</span>
-                                    <span className="stat-label">Revoked</span>
-                                </div>
-                            </div>
-                            <div className="stat-card">
-                                <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)' }}>
-                                    👥
-                                </div>
-                                <div className="stat-info">
-                                    <span className="stat-value">{stats.total_users}</span>
-                                    <span className="stat-label">Users</span>
-                                </div>
+                            <div>
+                                <div className="text-2xl font-bold dark:text-white">{s.value}</div>
+                                <div className="text-xs font-semibold uppercase tracking-wider text-gray-400">{s.label}</div>
                             </div>
                         </div>
-                    )}
+                    ))}
+                </div>
+            )}
 
-                    {/* Tabs */}
-                    <div className="admin-tabs mb-lg">
-                        <button
-                            className={`admin-tab ${activeTab === 'certificates' ? 'active' : ''}`}
-                            onClick={() => { setActiveTab('certificates'); setPage(1); }}
-                        >
-                            📄 Certificates
-                        </button>
-                        <button
-                            className={`admin-tab ${activeTab === 'users' ? 'active' : ''}`}
-                            onClick={() => { setActiveTab('users'); setPage(1); }}
-                        >
-                            👥 Users
-                        </button>
+            {/* Content Tabs */}
+            <div className="card-premium overflow-hidden">
+                <div className="flex border-b border-gray-100 dark:border-gray-800">
+                    <button onClick={() => { setActiveTab('certificates'); setPage(1); }} className={`flex-1 py-4 text-sm font-bold transition-colors ${activeTab === 'certificates' ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50/30' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}>
+                        Certificates
+                    </button>
+                    <button onClick={() => { setActiveTab('users'); setPage(1); }} className={`flex-1 py-4 text-sm font-bold transition-colors ${activeTab === 'users' ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50/30' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}>
+                        Users
+                    </button>
+                </div>
+
+                <div className="p-0 overflow-x-auto">
+                    {loading ? (
+                        <div className="py-20 flex justify-center"><div className="spinner"></div></div>
+                    ) : activeTab === 'certificates' ? (
+                        <table className="w-full text-left text-sm border-collapse">
+                            <thead className="bg-gray-50 dark:bg-gray-900/50">
+                                <tr>
+                                    <th className="px-6 py-4 font-bold text-gray-500 uppercase tracking-tighter text-xs">ID</th>
+                                    <th className="px-6 py-4 font-bold text-gray-500 uppercase tracking-tighter text-xs">Recipient & Course</th>
+                                    <th className="px-6 py-4 font-bold text-gray-500 uppercase tracking-tighter text-xs">Status</th>
+                                    <th className="px-6 py-4 font-bold text-gray-500 uppercase tracking-tighter text-xs">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                {certificates.map(cert => (
+                                    <tr key={cert.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                                        <td className="px-6 py-4 font-mono text-primary-600 dark:text-primary-400">{cert.certificate_id}</td>
+                                        <td className="px-6 py-4">
+                                            <div className="font-bold dark:text-white">{cert.student_name}</div>
+                                            <div className="text-xs text-gray-500">{cert.course_name} • {cert.issue_date}</div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${cert.is_revoked ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                                                {cert.is_revoked ? 'Revoked' : 'Active'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 space-x-2">
+                                            {!cert.is_revoked && (
+                                                <button onClick={() => setRevokeModal(cert)} className="text-red-500 hover:underline font-medium">Revoke</button>
+                                            )}
+                                            {cert.download_urls?.pdf && (
+                                                <a href={cert.download_urls.pdf} target="_blank" className="text-primary-500 hover:underline font-medium">View</a>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <table className="w-full text-left text-sm border-collapse">
+                            <thead className="bg-gray-50 dark:bg-gray-900/50">
+                                <tr>
+                                    <th className="px-6 py-4 font-bold text-gray-500 uppercase tracking-tighter text-xs">User Email</th>
+                                    <th className="px-6 py-4 font-bold text-gray-500 uppercase tracking-tighter text-xs">Count</th>
+                                    <th className="px-6 py-4 font-bold text-gray-500 uppercase tracking-tighter text-xs">Role</th>
+                                    <th className="px-6 py-4 font-bold text-gray-500 uppercase tracking-tighter text-xs">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                {users.map(u => (
+                                    <tr key={u.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                                        <td className="px-6 py-4 font-bold dark:text-white">{u.email}</td>
+                                        <td className="px-6 py-4 text-gray-500">{u.certificate_count} certs</td>
+                                        <td className="px-6 py-4 tracking-widest text-[10px]">
+                                            <span className={`px-2 py-1 rounded font-bold uppercase ${u.is_admin ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-600 dark:bg-gray-700'}`}>
+                                                {u.is_admin ? 'Admin' : 'User'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <button onClick={() => handleToggleAdmin(u.id)} className="text-primary-500 hover:underline font-medium text-xs">
+                                                {u.is_admin ? 'Demote' : 'Promote'}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                    <div className="p-4 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center text-sm">
+                        <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="btn-secondary !py-1 flex items-center gap-1">← Prev</button>
+                        <span className="text-gray-500 font-medium tracking-widest">Page {page} of {totalPages}</span>
+                        <button disabled={page === totalPages} onClick={() => setPage(p => p + 1)} className="btn-secondary !py-1 flex items-center gap-1">Next →</button>
                     </div>
+                )}
+            </div>
 
-                    {/* Certificates Table */}
-                    {activeTab === 'certificates' && (
-                        <div className="card">
-                            <h3 className="mb-lg">All Certificates</h3>
-                            {loading ? (
-                                <div className="text-center"><span className="spinner" /></div>
-                            ) : (
-                                <>
-                                    <div className="table-responsive">
-                                        <table className="admin-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Certificate ID</th>
-                                                    <th>Recipient</th>
-                                                    <th>Course</th>
-                                                    <th>Date</th>
-                                                    <th>Status</th>
-                                                    <th>User</th>
-                                                    <th>Actions</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {certificates.map(cert => (
-                                                    <tr key={cert.id} className={cert.is_revoked ? 'revoked' : ''}>
-                                                        <td>
-                                                            <code>{cert.certificate_id}</code>
-                                                        </td>
-                                                        <td>{cert.student_name}</td>
-                                                        <td>{cert.course_name}</td>
-                                                        <td>{cert.issue_date}</td>
-                                                        <td>
-                                                            {cert.is_revoked ? (
-                                                                <span className="badge badge-error">Revoked</span>
-                                                            ) : (
-                                                                <span className="badge badge-success">Active</span>
-                                                            )}
-                                                        </td>
-                                                        <td className="text-muted">{cert.user_email || '-'}</td>
-                                                        <td>
-                                                            <div className="action-buttons">
-                                                                {cert.download_urls?.pdf && (
-                                                                    <a href={cert.download_urls.pdf} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline">
-                                                                        View
-                                                                    </a>
-                                                                )}
-                                                                {cert.is_revoked ? (
-                                                                    <button
-                                                                        className="btn btn-sm btn-secondary"
-                                                                        onClick={() => handleRestore(cert.certificate_id)}
-                                                                    >
-                                                                        Restore
-                                                                    </button>
-                                                                ) : (
-                                                                    <button
-                                                                        className="btn btn-sm btn-danger"
-                                                                        onClick={() => setRevokeModal(cert)}
-                                                                    >
-                                                                        Revoke
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    {/* Pagination */}
-                                    {totalPages > 1 && (
-                                        <div className="pagination mt-lg">
-                                            <button
-                                                className="btn btn-sm btn-secondary"
-                                                disabled={page === 1}
-                                                onClick={() => setPage(p => p - 1)}
-                                            >
-                                                Previous
-                                            </button>
-                                            <span className="pagination-info">Page {page} of {totalPages}</span>
-                                            <button
-                                                className="btn btn-sm btn-secondary"
-                                                disabled={page === totalPages}
-                                                onClick={() => setPage(p => p + 1)}
-                                            >
-                                                Next
-                                            </button>
-                                        </div>
-                                    )}
-                                </>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Users Table */}
-                    {activeTab === 'users' && (
-                        <div className="card">
-                            <h3 className="mb-lg">All Users</h3>
-                            {loading ? (
-                                <div className="text-center"><span className="spinner" /></div>
-                            ) : (
-                                <>
-                                    <div className="table-responsive">
-                                        <table className="admin-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Email</th>
-                                                    <th>Phone</th>
-                                                    <th>Certificates</th>
-                                                    <th>Admin</th>
-                                                    <th>Created</th>
-                                                    <th>Actions</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {users.map(user => (
-                                                    <tr key={user.id}>
-                                                        <td>{user.email || '-'}</td>
-                                                        <td>{user.phone || '-'}</td>
-                                                        <td>{user.certificate_count}</td>
-                                                        <td>
-                                                            {user.is_admin ? (
-                                                                <span className="badge badge-primary">Admin</span>
-                                                            ) : (
-                                                                <span className="badge badge-secondary">User</span>
-                                                            )}
-                                                        </td>
-                                                        <td className="text-muted">
-                                                            {new Date(user.created_at).toLocaleDateString()}
-                                                        </td>
-                                                        <td>
-                                                            <button
-                                                                className="btn btn-sm btn-outline"
-                                                                onClick={() => handleToggleAdmin(user.id)}
-                                                            >
-                                                                {user.is_admin ? 'Remove Admin' : 'Make Admin'}
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    )}
-                </div>
-            </main>
-
-            {/* Revoke Modal */}
+            {/* Modal */}
             {revokeModal && (
-                <div className="modal-overlay" onClick={() => setRevokeModal(null)}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()}>
-                        <h3>Revoke Certificate</h3>
-                        <p>Are you sure you want to revoke certificate <strong>{revokeModal.certificate_id}</strong>?</p>
-                        <p className="text-muted">Recipient: {revokeModal.student_name}</p>
-
-                        <div className="form-group mt-lg">
-                            <label className="form-label">Reason (optional)</label>
-                            <textarea
-                                className="form-input"
-                                rows="3"
-                                placeholder="Enter reason for revocation..."
-                                value={revokeReason}
-                                onChange={e => setRevokeReason(e.target.value)}
-                            />
-                        </div>
-
-                        <div className="modal-actions">
-                            <button className="btn btn-secondary" onClick={() => setRevokeModal(null)}>
-                                Cancel
-                            </button>
-                            <button className="btn btn-danger" onClick={() => handleRevoke(revokeModal.certificate_id)}>
-                                Revoke Certificate
-                            </button>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+                    <div className="card-premium max-w-md w-full p-8 space-y-6">
+                        <h3 className="text-2xl font-bold dark:text-white">Revoke Certificate</h3>
+                        <p className="text-gray-500">ID: <span className="font-mono text-red-500">{revokeModal.certificate_id}</span></p>
+                        <textarea className="input-premium h-24" placeholder="Reason for revocation..." value={revokeReason} onChange={e => setRevokeReason(e.target.value)} />
+                        <div className="flex gap-4">
+                            <button onClick={() => setRevokeModal(null)} className="btn-secondary flex-1">Cancel</button>
+                            <button onClick={() => handleRevoke(revokeModal.certificate_id)} className="btn-primary flex-1 !bg-red-600 hover:!bg-red-700">Confirm Revoke</button>
                         </div>
                     </div>
                 </div>

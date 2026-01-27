@@ -99,16 +99,31 @@ export const authService = {
 
     // Get current session
     async getSession() {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) throw error;
-        return session;
+        try {
+            const { data: { session }, error } = await supabase.auth.getSession();
+            if (error) throw error;
+            return session;
+        } catch (error) {
+            // Silence aborted requests as they are expected during unmount/reload
+            if (error.name !== 'AbortError' && !error.message?.includes('aborted')) {
+                console.error('Supabase getSession error:', error);
+            }
+            return null;
+        }
     },
 
     // Get current user
     async getUser() {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        if (error) throw error;
-        return user;
+        try {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            if (error) throw error;
+            return user;
+        } catch (error) {
+            if (error.name !== 'AbortError' && !error.message?.includes('aborted')) {
+                console.error('Supabase getUser error:', error);
+            }
+            return null;
+        }
     },
 
     // Get access token for API calls

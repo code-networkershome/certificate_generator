@@ -32,7 +32,17 @@ postgres_data/
 
 # Generated files
 storage/
+/tmp/storage
+/tmp/uploads
+backend/storage/
+frontend/storage/
 *.log
+backend/trace.txt
+
+# Databases
+*.db
+*.sqlite3
+sqlite/
 
 # Python
 *.pyo

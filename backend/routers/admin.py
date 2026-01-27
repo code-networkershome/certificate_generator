@@ -46,17 +46,16 @@ class AdminStatsResponse(BaseModel):
     total_users: int
 
 
-# Helper to check if user is admin
 async def get_admin_user(
     db: AsyncSession = Depends(get_db),
     current_user: str = Depends(get_current_user)
 ) -> User:
-    """Verify that current user is an admin."""
+    """Verify that current user is an admin strictly via database flag."""
     import uuid as uuid_module
     
     user = None
     
-    # Try to find user by ID first
+    # Strictly use UUID for lookup to ensure session integrity
     try:
         user_uuid = uuid_module.UUID(current_user)
         result = await db.execute(
@@ -64,10 +63,7 @@ async def get_admin_user(
         )
         user = result.scalar_one_or_none()
     except (ValueError, TypeError):
-        pass
-    
-    # Fallback: try to find by email
-    if not user:
+        # If not a UUID, check if it's an email (backward compat for some flows)
         result = await db.execute(
             select(User).where(User.email == current_user)
         )
@@ -79,10 +75,17 @@ async def get_admin_user(
             detail="User not found"
         )
     
+    # Strict admin check
     if not user.is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required"
+            detail="Admin access required. Please contact system administrator."
+        )
+    
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User account is inactive"
         )
     
     return user

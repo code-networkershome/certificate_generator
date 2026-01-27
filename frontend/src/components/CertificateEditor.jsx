@@ -1,18 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { API_URL } from '../api';
-import { authService } from '../supabase';
+import { certificatesAPI } from '../api';
 
-/**
- * CertificateEditor - Interactive preview editor with drag-drop and click-to-edit
- * 
- * Props:
- * - templateId: string - Selected template ID
- * - templateName: string - Template name for display
- * - certificateData: object - Current certificate data
- * - onDataChange: (data) => void - Callback when data changes
- * - onFinalize: (data, positions, styles) => void - Callback to generate final certificate
- * - onBack: () => void - Go back to form
- */
 export default function CertificateEditor({
     templateId,
     templateName,
@@ -24,673 +12,261 @@ export default function CertificateEditor({
     const [previewHtml, setPreviewHtml] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-
-    // Editor state
+    const [finalizing, setFinalizing] = useState(false);
     const [selectedElement, setSelectedElement] = useState(null);
     const [elementPositions, setElementPositions] = useState({});
     const [elementStyles, setElementStyles] = useState({});
-    const [editingText, setEditingText] = useState(null);
-    const [editingValue, setEditingValue] = useState('');
-    const [deletedElements, setDeletedElements] = useState([]);
-    const [customElements, setCustomElements] = useState([]);
     const [nextCustomId, setNextCustomId] = useState(1);
-
-    // Drag state
-    const [isDragging, setIsDragging] = useState(false);
-    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-
-    const iframeRef = useRef(null);
+    const [scale, setScale] = useState(1);
     const containerRef = useRef(null);
 
-    // Fetch preview HTML from backend
+    const iframeRef = useRef(null);
+
     const fetchPreview = useCallback(async () => {
         setLoading(true);
         setError('');
-
         try {
-            const token = await authService.getAccessToken();
-            const response = await fetch(`${API_URL}/certificate/preview`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    template_id: templateId,
-                    certificate_data: certificateData,
-                    element_positions: Object.entries(elementPositions).map(([id, pos]) => ({
-                        element_id: id,
-                        x: pos.x,
-                        y: pos.y
-                    })),
-                    element_styles: Object.entries(elementStyles).map(([id, style]) => ({
-                        element_id: id,
-                        ...style
-                    }))
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to load preview');
-            }
-
-            const data = await response.json();
+            const data = await certificatesAPI.preview(
+                templateId,
+                certificateData,
+                Object.entries(elementPositions).map(([id, pos]) => ({ element_id: id, x: pos.x, y: pos.y })),
+                Object.entries(elementStyles).map(([id, style]) => ({ element_id: id, ...style }))
+            );
             setPreviewHtml(data.html);
         } catch (err) {
-            setError(err.message);
+            if (err.name !== 'AbortError') setError(err.message);
         } finally {
             setLoading(false);
         }
     }, [templateId, certificateData, elementPositions, elementStyles]);
 
-    // Initial load
+    useEffect(() => { fetchPreview(); }, []);
+
     useEffect(() => {
-        fetchPreview();
+        const handleResize = () => {
+            if (!containerRef.current) return;
+            const container = containerRef.current;
+            const padding = 32;
+            const availableWidth = container.clientWidth - padding;
+            const availableHeight = container.clientHeight - padding;
+            const certWidth = 1123;
+            const certHeight = 794;
+            const newScale = Math.min(availableWidth / certWidth, availableHeight / certHeight);
+            setScale(Math.max(0.1, Math.min(newScale, 1)));
+        };
+        const resizeObserver = new ResizeObserver(handleResize);
+        if (containerRef.current) resizeObserver.observe(containerRef.current);
+        handleResize();
+        return () => resizeObserver.disconnect();
     }, []);
 
-    // Inject editor scripts into iframe
-    useEffect(() => {
-        if (!previewHtml || !iframeRef.current) return;
-
-        const iframe = iframeRef.current;
-        const doc = iframe.contentDocument || iframe.contentWindow.document;
-
-        // Inject the preview HTML with editor enhancements
-        const enhancedHtml = injectEditorCapabilities(previewHtml);
-        doc.open();
-        doc.write(enhancedHtml);
-        doc.close();
-
-        // Add event listeners to iframe content
-        setTimeout(() => {
-            setupEditorEvents(doc);
-        }, 100);
-    }, [previewHtml]);
-
-    // Inject CSS and data attributes for editing
-    const injectEditorCapabilities = (html) => {
-        const editorStyles = `
-            <style id="editor-styles">
-                * { cursor: pointer !important; }
-                [data-editable]:hover {
-                    outline: 2px dashed #6366f1 !important;
-                    outline-offset: 2px;
-                }
-                [data-editable].selected {
-                    outline: 2px solid #6366f1 !important;
-                    outline-offset: 2px;
-                }
-                [data-editable].dragging {
-                    opacity: 0.8;
-                    cursor: grabbing !important;
-                }
-                .edit-input {
-                    background: white !important;
-                    border: 2px solid #6366f1 !important;
-                    padding: 4px 8px !important;
-                    font: inherit !important;
-                    color: inherit !important;
-                    min-width: 100px;
-                    outline: none !important;
-                }
-            </style>
-        `;
-
-        // Add data-editable attributes to text elements
-        let enhanced = html;
-
-        // Add editor ID to common certificate elements (known fields)
-        const editableSelectors = [
-            { pattern: /class="recipient"/g, attr: 'data-editable="recipient" data-field="student_name"' },
-            { pattern: /class="student-name"/g, attr: 'data-editable="student-name" data-field="student_name"' },
-            { pattern: /class="course-name"/g, attr: 'data-editable="course-name" data-field="course_name"' },
-            { pattern: /class="title"/g, attr: 'data-editable="title" data-field="certificate_title"' },
-            { pattern: /class="subtitle"/g, attr: 'data-editable="subtitle" data-field="certificate_subtitle"' },
-            { pattern: /class="description"/g, attr: 'data-editable="description" data-field="description_text"' },
-            { pattern: /class="date"/g, attr: 'data-editable="date" data-field="issue_date"' },
-            { pattern: /class="value"/g, attr: 'data-editable="value"' },
-            { pattern: /class="certify-text"/g, attr: 'data-editable="certify-text"' },
-            { pattern: /class="intro"/g, attr: 'data-editable="intro"' },
-            { pattern: /class="body-text"/g, attr: 'data-editable="body-text"' },
-            { pattern: /class="footer"/g, attr: 'data-editable="footer"' },
-            { pattern: /class="signature"/g, attr: 'data-editable="signature"' },
-            { pattern: /class="authority"/g, attr: 'data-editable="authority"' },
-        ];
-
-        editableSelectors.forEach(({ pattern, attr }) => {
-            enhanced = enhanced.replace(pattern, `class="${pattern.source.replace(/class="|\"/g, '')}" ${attr}`);
-        });
-
-        // Inject a script to make all text elements editable after DOM loads
-        const editorScript = `
-            <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    // Mark all text-containing elements as editable
-                    const textElements = document.querySelectorAll('p, span, div, h1, h2, h3, h4, h5, h6, td, th, label');
-                    let counter = 1;
-                    textElements.forEach(function(el) {
-                        // Skip if already has data-editable or is a container with many children
-                        if (el.hasAttribute('data-editable')) return;
-                        if (el.children.length > 3) return;
-                        
-                        // Only mark elements that have direct text content
-                        const hasDirectText = Array.from(el.childNodes).some(
-                            node => node.nodeType === Node.TEXT_NODE && node.textContent.trim().length > 0
-                        );
-                        
-                        if (hasDirectText || (el.children.length === 0 && el.textContent.trim().length > 0)) {
-                            el.setAttribute('data-editable', 'element-' + counter++);
-                        }
-                    });
-                });
-            </script>
-        `;
-
-        // Inject styles and script
-        if (enhanced.includes('</head>')) {
-            enhanced = enhanced.replace('</head>', `${editorStyles}${editorScript}</head>`);
-        } else if (enhanced.includes('</body>')) {
-            enhanced = enhanced.replace('</body>', `${editorScript}</body>`);
-            enhanced = editorStyles + enhanced;
-        } else {
-            enhanced = editorStyles + enhanced + editorScript;
-        }
-
-        return enhanced;
-    };
-
-    // Setup event handlers in iframe
     const setupEditorEvents = (doc) => {
-        // First, mark all text-containing elements as editable
+        // Force hide scrollbars in the iframe to prevent layout shifts
+        const style = doc.createElement('style');
+        style.textContent = 'body { overflow: hidden !important; -ms-overflow-style: none; scrollbar-width: none; } body::-webkit-scrollbar { display: none; }';
+        doc.head.appendChild(style);
+
         const textElements = doc.querySelectorAll('p, span, div, h1, h2, h3, h4, h5, h6, td, th, label');
         let counter = 1;
         textElements.forEach((el) => {
-            // Skip if already has data-editable
-            if (el.hasAttribute('data-editable')) return;
-            // Skip containers with many children (likely layout elements)
-            if (el.children.length > 3) return;
-            // Skip if element is too large (likely a container)
-            if (el.offsetWidth > 500 && el.offsetHeight > 200) return;
-
-            // Check if element has direct text content
-            const hasDirectText = Array.from(el.childNodes).some(
-                node => node.nodeType === Node.TEXT_NODE && node.textContent.trim().length > 0
-            );
-
-            // Mark as editable if it has text content
+            if (el.hasAttribute('data-editable') || el.children.length > 3) return;
+            const hasDirectText = Array.from(el.childNodes).some(n => n.nodeType === Node.TEXT_NODE && n.textContent.trim().length > 0);
             if (hasDirectText || (el.children.length === 0 && el.textContent.trim().length > 0)) {
                 el.setAttribute('data-editable', 'element-' + counter++);
             }
         });
 
-        // Now setup events for all editable elements
-        const editables = doc.querySelectorAll('[data-editable]');
-
-        editables.forEach(el => {
-            // Click to select
+        doc.querySelectorAll('[data-editable]').forEach(el => {
             el.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-
-                // Remove previous selection
-                doc.querySelectorAll('.selected').forEach(s => s.classList.remove('selected'));
-                el.classList.add('selected');
-
-                setSelectedElement({
-                    id: el.getAttribute('data-editable'),
-                    field: el.getAttribute('data-field'),
-                    element: el
-                });
+                e.preventDefault(); e.stopPropagation();
+                doc.querySelectorAll('.selected').forEach(s => s.classList.remove('selected', 'outline', 'outline-primary-500'));
+                el.classList.add('selected', 'outline', 'outline-primary-500');
+                setSelectedElement({ id: el.getAttribute('data-editable'), field: el.getAttribute('data-field'), element: el });
             });
 
-            // Double-click to edit text
             el.addEventListener('dblclick', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-
+                e.preventDefault(); e.stopPropagation();
                 const field = el.getAttribute('data-field');
-                setEditingText({
-                    id: el.getAttribute('data-editable'),
-                    field: field,
-                    element: el
-                });
-                setEditingValue(el.textContent);
-
-                // Replace with input
                 const input = doc.createElement('input');
-                input.type = 'text';
+                input.className = 'bg-white border-2 border-primary-500 px-2 py-1 rounded outline-none shadow-lg';
                 input.value = el.textContent;
-                input.className = 'edit-input';
-                input.style.width = Math.max(el.offsetWidth, 100) + 'px';
-
                 const originalContent = el.innerHTML;
-                el.innerHTML = '';
-                el.appendChild(input);
+                el.innerHTML = ''; el.appendChild(input);
                 input.focus();
-                input.select();
-
-                const finishEdit = () => {
-                    const newValue = input.value;
-                    el.innerHTML = newValue;
-
-                    // Update certificate data if this is a known field
-                    if (field && onDataChange) {
-                        onDataChange({
-                            ...certificateData,
-                            [field]: newValue
-                        });
-                    }
-                    setEditingText(null);
+                input.onblur = () => {
+                    const val = input.value; el.innerHTML = val;
+                    if (field && onDataChange) onDataChange({ ...certificateData, [field]: val });
                 };
-
-                input.addEventListener('blur', finishEdit);
-                input.addEventListener('keydown', (ke) => {
-                    if (ke.key === 'Enter') {
-                        finishEdit();
-                    } else if (ke.key === 'Escape') {
-                        el.innerHTML = originalContent;
-                        setEditingText(null);
-                    }
-                });
             });
 
-            // Drag start
             el.addEventListener('mousedown', (e) => {
-                if (editingText) return;
-
                 const rect = el.getBoundingClientRect();
-                setDragOffset({
-                    x: e.clientX - rect.left,
-                    y: e.clientY - rect.top
-                });
-                setIsDragging(true);
-                el.classList.add('dragging');
-
-                const handleMouseMove = (moveEvent) => {
-                    const iframeRect = iframeRef.current.getBoundingClientRect();
-                    const containerRect = doc.body.getBoundingClientRect();
-
-                    const x = moveEvent.clientX - iframeRect.left - dragOffset.x;
-                    const y = moveEvent.clientY - iframeRect.top - dragOffset.y;
-
-                    el.style.position = 'absolute';
-                    el.style.left = x + 'px';
-                    el.style.top = y + 'px';
-
-                    // Store position
-                    setElementPositions(prev => ({
-                        ...prev,
-                        [el.getAttribute('data-editable')]: { x, y }
-                    }));
+                const offset = {
+                    x: (e.clientX - rect.left) / scale,
+                    y: (e.clientY - rect.top) / scale
                 };
-
-                const handleMouseUp = () => {
-                    setIsDragging(false);
-                    el.classList.remove('dragging');
-                    doc.removeEventListener('mousemove', handleMouseMove);
-                    doc.removeEventListener('mouseup', handleMouseUp);
+                const move = (me) => {
+                    const iRect = iframeRef.current.getBoundingClientRect();
+                    const x = (me.clientX - iRect.left) / scale - offset.x;
+                    const y = (me.clientY - iRect.top) / scale - offset.y;
+                    el.style.position = 'absolute'; el.style.left = x + 'px'; el.style.top = y + 'px';
+                    setElementPositions(p => ({ ...p, [el.getAttribute('data-editable')]: { x, y } }));
                 };
-
-                doc.addEventListener('mousemove', handleMouseMove);
-                doc.addEventListener('mouseup', handleMouseUp);
+                const up = () => { doc.removeEventListener('mousemove', move); doc.removeEventListener('mouseup', up); };
+                doc.addEventListener('mousemove', move); doc.addEventListener('mouseup', up);
             });
         });
     };
 
-    // Update element style
-    const updateStyle = (property, value) => {
+    useEffect(() => {
+        if (!previewHtml || !iframeRef.current) return;
+        const doc = iframeRef.current.contentDocument;
+        doc.open(); doc.write(previewHtml); doc.close();
+        setTimeout(() => setupEditorEvents(doc), 100);
+    }, [previewHtml]);
+
+    const updateStyle = (prop, val) => {
         if (!selectedElement) return;
-
-        setElementStyles(prev => ({
-            ...prev,
-            [selectedElement.id]: {
-                ...prev[selectedElement.id],
-                [property]: value
-            }
-        }));
-
-        // Apply immediately to preview
-        if (selectedElement.element) {
-            selectedElement.element.style[property] = value;
-        }
+        setElementStyles(p => ({ ...p, [selectedElement.id]: { ...p[selectedElement.id], [prop]: val } }));
+        if (selectedElement.element) selectedElement.element.style[prop] = val;
     };
 
-    // Handle finalize
     const handleFinalize = async () => {
-        setLoading(true);
+        setFinalizing(true);
+        setError('');
         try {
             await onFinalize(
                 certificateData,
-                Object.entries(elementPositions).map(([id, pos]) => ({
-                    element_id: id,
-                    x: pos.x,
-                    y: pos.y
-                })),
-                Object.entries(elementStyles).map(([id, style]) => ({
-                    element_id: id,
-                    ...style
-                }))
+                Object.entries(elementPositions).map(([id, p]) => ({ element_id: id, ...p })),
+                Object.entries(elementStyles).map(([id, s]) => ({ element_id: id, ...s }))
             );
         } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
+            setError(err.message || 'Failed to finalize certificate');
+            setFinalizing(false);
         }
-    };
-
-    // Refresh preview with current changes
-    const refreshPreview = () => {
-        fetchPreview();
-    };
-
-    // Delete selected element
-    const deleteElement = () => {
-        if (!selectedElement) return;
-
-        // Add to deleted list
-        setDeletedElements(prev => [...prev, selectedElement.id]);
-
-        // Hide element in preview
-        if (selectedElement.element) {
-            selectedElement.element.style.display = 'none';
-        }
-
-        setSelectedElement(null);
-    };
-
-    // Add new text element
-    const addTextElement = () => {
-        const id = `custom-text-${nextCustomId}`;
-        setNextCustomId(prev => prev + 1);
-
-        const newElement = {
-            id,
-            type: 'text',
-            content: 'Double-click to edit',
-            x: 100,
-            y: 100,
-            fontSize: '16pt',
-            color: '#000000',
-            fontWeight: 'normal'
-        };
-
-        setCustomElements(prev => [...prev, newElement]);
-
-        // Add to iframe
-        if (iframeRef.current) {
-            const doc = iframeRef.current.contentDocument;
-            const div = doc.createElement('div');
-            div.setAttribute('data-editable', id);
-            div.setAttribute('data-custom', 'true');
-            div.style.cssText = `
-                position: absolute;
-                left: ${newElement.x}px;
-                top: ${newElement.y}px;
-                font-size: ${newElement.fontSize};
-                color: ${newElement.color};
-                padding: 4px 8px;
-                background: rgba(255,255,255,0.9);
-                border: 1px dashed #6366f1;
-                cursor: move;
-                min-width: 100px;
-            `;
-            div.textContent = newElement.content;
-            doc.body.appendChild(div);
-
-            // Setup events for new element
-            setupSingleElementEvents(doc, div);
-        }
-    };
-
-    // Setup events for a single element
-    const setupSingleElementEvents = (doc, el) => {
-        el.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            doc.querySelectorAll('.selected').forEach(s => s.classList.remove('selected'));
-            el.classList.add('selected');
-            setSelectedElement({
-                id: el.getAttribute('data-editable'),
-                field: el.getAttribute('data-field'),
-                element: el,
-                isCustom: el.getAttribute('data-custom') === 'true'
-            });
-        });
-
-        el.addEventListener('dblclick', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const currentText = el.textContent;
-            const input = doc.createElement('input');
-            input.type = 'text';
-            input.value = currentText;
-            input.className = 'edit-input';
-            input.style.width = Math.max(el.offsetWidth, 100) + 'px';
-            el.innerHTML = '';
-            el.appendChild(input);
-            input.focus();
-            input.select();
-
-            const finishEdit = () => {
-                el.textContent = input.value;
-                // Update custom elements state
-                setCustomElements(prev => prev.map(ce =>
-                    ce.id === el.getAttribute('data-editable')
-                        ? { ...ce, content: input.value }
-                        : ce
-                ));
-            };
-            input.addEventListener('blur', finishEdit);
-            input.addEventListener('keydown', (ke) => {
-                if (ke.key === 'Enter') finishEdit();
-            });
-        });
-
-        el.addEventListener('mousedown', (e) => {
-            const rect = el.getBoundingClientRect();
-            const offsetX = e.clientX - rect.left;
-            const offsetY = e.clientY - rect.top;
-
-            const handleMove = (me) => {
-                const iframeRect = iframeRef.current.getBoundingClientRect();
-                const x = me.clientX - iframeRect.left - offsetX;
-                const y = me.clientY - iframeRect.top - offsetY;
-                el.style.left = x + 'px';
-                el.style.top = y + 'px';
-                setElementPositions(prev => ({
-                    ...prev,
-                    [el.getAttribute('data-editable')]: { x, y }
-                }));
-            };
-
-            const handleUp = () => {
-                doc.removeEventListener('mousemove', handleMove);
-                doc.removeEventListener('mouseup', handleUp);
-            };
-
-            doc.addEventListener('mousemove', handleMove);
-            doc.addEventListener('mouseup', handleUp);
-        });
     };
 
     return (
-        <div className="certificate-editor" ref={containerRef}>
-            <div className="editor-header">
-                <button className="btn btn-secondary" onClick={onBack}>
-                    ← Back to Form
-                </button>
-                <h2>Edit Certificate: {templateName}</h2>
-                <div className="editor-actions">
-                    <button className="btn btn-secondary" onClick={refreshPreview}>
-                        🔄 Refresh Preview
+        <div className="fixed inset-0 top-16 z-40 bg-[#f8faff] dark:bg-gray-950 p-6 flex flex-col animate-fade-in-up overflow-hidden">
+            <div className="flex items-center justify-between mb-6 bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                <div className="flex items-center gap-4">
+                    <button onClick={onBack} className="btn-secondary !py-2 !px-4 flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                        Back
                     </button>
+                    <div>
+                        <h2 className="text-xl font-bold dark:text-white leading-tight">{templateName}</h2>
+                        <p className="text-xs text-gray-500 uppercase tracking-widest font-semibold">Interactive Editor</p>
+                    </div>
+                </div>
+                <div className="flex gap-3">
+                    <button onClick={fetchPreview} disabled={finalizing} className="btn-secondary !py-2 !px-4">Refresh</button>
                     <button
-                        className="btn btn-primary"
                         onClick={handleFinalize}
-                        disabled={loading}
+                        disabled={finalizing}
+                        className="btn-primary !py-2 !px-6 shadow-lg shadow-primary-500/20 flex items-center gap-2"
                     >
-                        {loading ? 'Generating...' : '✓ Finalize & Download'}
+                        {finalizing ? <div className="spinner !w-4 !h-4 border-white/30 border-t-white" /> : null}
+                        {finalizing ? 'Processing...' : 'Finalize Certificate'}
                     </button>
                 </div>
             </div>
 
-            {error && <div className="alert alert-error">{error}</div>}
-
-            <div className="editor-content">
-                {/* Preview Panel */}
-                <div className="preview-panel">
-                    <div className="preview-instructions">
-                        <p>💡 <strong>Click</strong> to select • <strong>Double-click</strong> to edit text • <strong>Drag</strong> to reposition</p>
+            {error && (
+                <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-xl flex items-center justify-between gap-3 text-red-600 dark:text-red-400">
+                    <div className="flex items-center gap-3">
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <span className="text-sm font-medium">{error}</span>
                     </div>
+                    <button onClick={() => setError('')} className="p-1 hover:bg-red-100 dark:hover:bg-red-800 rounded-lg">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+            )}
 
-                    <div className="preview-frame-container">
-                        {loading && !previewHtml ? (
-                            <div className="preview-loading">
-                                <span className="spinner"></span>
-                                <p>Loading preview...</p>
-                            </div>
-                        ) : (
-                            <iframe
-                                ref={iframeRef}
-                                className="preview-frame"
-                                title="Certificate Preview"
-                                sandbox="allow-same-origin"
-                            />
-                        )}
+            <div className="flex-1 flex gap-6 overflow-hidden items-stretch">
+                <div ref={containerRef} className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-3xl overflow-hidden border-2 border-dashed border-gray-200 dark:border-gray-700 relative flex items-center justify-center">
+                    {loading && <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-100/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-3xl"><div className="spinner"></div></div>}
+                    <div
+                        className="bg-white shadow-2xl origin-center transition-transform duration-200"
+                        style={{
+                            width: '1123px',
+                            height: '794px',
+                            transform: `scale(${scale})`,
+                            flexShrink: 0
+                        }}
+                    >
+                        <iframe
+                            ref={iframeRef}
+                            className="w-full h-full border-none pointer-events-auto"
+                            title="Preview"
+                            sandbox="allow-same-origin allow-scripts"
+                        />
                     </div>
                 </div>
 
-                {/* Properties Panel */}
-                <div className="properties-panel">
-                    <h3>Properties</h3>
-
-                    {selectedElement ? (
-                        <div className="property-controls">
-                            <p className="selected-label">
-                                Selected: <strong>{selectedElement.id}</strong>
-                            </p>
-
-                            <div className="property-group">
-                                <label>Font Size</label>
-                                <select
-                                    onChange={(e) => updateStyle('fontSize', e.target.value)}
-                                    value={elementStyles[selectedElement.id]?.fontSize || ''}
-                                >
-                                    <option value="">Default</option>
-                                    <option value="12pt">12pt</option>
-                                    <option value="14pt">14pt</option>
-                                    <option value="16pt">16pt</option>
-                                    <option value="18pt">18pt</option>
-                                    <option value="20pt">20pt</option>
-                                    <option value="24pt">24pt</option>
-                                    <option value="30pt">30pt</option>
-                                    <option value="36pt">36pt</option>
-                                    <option value="48pt">48pt</option>
-                                </select>
+                <div className="w-80 space-y-6 overflow-y-auto pr-2">
+                    <div className="card-premium p-6 space-y-6">
+                        <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-xl">
+                            <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-1 flex items-center gap-1">
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                                Simulator Mode
                             </div>
-
-                            <div className="property-group">
-                                <label>Color</label>
-                                <input
-                                    type="color"
-                                    onChange={(e) => updateStyle('color', e.target.value)}
-                                    value={elementStyles[selectedElement.id]?.color || '#000000'}
-                                />
-                            </div>
-
-                            <div className="property-group">
-                                <label>Font Weight</label>
-                                <select
-                                    onChange={(e) => updateStyle('fontWeight', e.target.value)}
-                                    value={elementStyles[selectedElement.id]?.fontWeight || ''}
-                                >
-                                    <option value="">Default</option>
-                                    <option value="normal">Normal</option>
-                                    <option value="bold">Bold</option>
-                                    <option value="600">Semi-Bold</option>
-                                    <option value="800">Extra Bold</option>
-                                </select>
-                            </div>
-
-                            <div className="property-group">
-                                <label>Text Align</label>
-                                <select
-                                    onChange={(e) => updateStyle('textAlign', e.target.value)}
-                                    value={elementStyles[selectedElement.id]?.textAlign || ''}
-                                >
-                                    <option value="">Default</option>
-                                    <option value="left">Left</option>
-                                    <option value="center">Center</option>
-                                    <option value="right">Right</option>
-                                </select>
-                            </div>
-
-                            {elementPositions[selectedElement.id] && (
-                                <div className="position-info">
-                                    <p>Position: X: {Math.round(elementPositions[selectedElement.id].x)}px, Y: {Math.round(elementPositions[selectedElement.id].y)}px</p>
-                                    <button
-                                        className="btn btn-sm btn-secondary"
-                                        onClick={() => {
-                                            setElementPositions(prev => {
-                                                const updated = { ...prev };
-                                                delete updated[selectedElement.id];
-                                                return updated;
-                                            });
-                                            refreshPreview();
-                                        }}
-                                    >
-                                        Reset Position
-                                    </button>
-                                </div>
-                            )}
-
-                            <hr />
-                            <button
-                                className="btn btn-danger btn-block"
-                                onClick={deleteElement}
-                            >
-                                🗑️ Delete Element
-                            </button>
+                            <p className="text-[10px] text-amber-700 dark:text-amber-300 leading-tight">Server lacks PDF libraries. Success will be simulated with placeholder files.</p>
                         </div>
-                    ) : (
-                        <p className="no-selection">Click an element in the preview to select it</p>
-                    )}
 
-                    <hr />
+                        <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                            <svg className="w-4 h-4 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                            Properties
+                        </h3>
 
-                    <div className="add-elements">
-                        <h4>Add Elements</h4>
-                        <button
-                            className="btn btn-secondary btn-block"
-                            onClick={addTextElement}
-                        >
-                            ➕ Add Text Box
-                        </button>
+                        {selectedElement ? (
+                            <div className="space-y-4 animate-fade-in-up">
+                                <div className="p-3 bg-primary-50 dark:bg-primary-900/20 rounded-xl border border-primary-100 dark:border-primary-800">
+                                    <div className="text-[10px] font-bold text-primary-600 dark:text-primary-400 uppercase tracking-widest mb-1">Editing Element</div>
+                                    <div className="text-sm font-bold truncate dark:text-white capitalize">{selectedElement.id.replace('-', ' ')}</div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Font Size</label>
+                                    <select className="input-premium py-1.5" onChange={(e) => updateStyle('fontSize', e.target.value)}>
+                                        <option value="">Auto</option>
+                                        {['12pt', '16pt', '20pt', '24pt', '32pt', '48pt'].map(s => <option key={s} value={s}>{s}</option>)}
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Text Color</label>
+                                    <div className="flex gap-2">
+                                        <input type="color" className="w-10 h-10 rounded-lg p-1 bg-white border border-gray-200 cursor-pointer" onChange={(e) => updateStyle('color', e.target.value)} />
+                                        <input type="text" className="input-premium py-1 flex-1 text-xs" placeholder="#000000" onChange={(e) => updateStyle('color', e.target.value)} />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Font Weight</label>
+                                    <select className="input-premium py-1.5" onChange={(e) => updateStyle('fontWeight', e.target.value)}>
+                                        <option value="normal">Normal</option>
+                                        <option value="600">Semi Bold</option>
+                                        <option value="bold">Bold</option>
+                                    </select>
+                                </div>
+                                <button onClick={() => { selectedElement.element.style.display = 'none'; setSelectedElement(null); }} className="w-full btn-secondary !text-red-500 hover:!bg-red-50 !py-2 border-red-100">Delete Element</button>
+                            </div>
+                        ) : (
+                            <div className="py-12 text-center space-y-3">
+                                <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto text-gray-400">
+                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5" /></svg>
+                                </div>
+                                <p className="text-xs text-gray-400 px-4">Click any element on the certificate to edit its properties</p>
+                            </div>
+                        )}
                     </div>
 
-                    <hr />
-
-                    <div className="quick-edit">
-                        <h4>Quick Edit Data</h4>
-                        <div className="property-group">
-                            <label>Student Name</label>
-                            <input
-                                type="text"
-                                value={certificateData.student_name || ''}
-                                onChange={(e) => onDataChange({ ...certificateData, student_name: e.target.value })}
-                            />
+                    <div className="card-premium p-6 space-y-4">
+                        <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">Quick Data</h3>
+                        <div className="space-y-3">
+                            <input type="text" className="input-premium text-xs" placeholder="Student Name" value={certificateData.student_name} onChange={(e) => onDataChange({ ...certificateData, student_name: e.target.value })} />
+                            <input type="text" className="input-premium text-xs" placeholder="Course Name" value={certificateData.course_name} onChange={(e) => onDataChange({ ...certificateData, course_name: e.target.value })} />
+                            <button onClick={fetchPreview} className="w-full btn-secondary !text-primary-600 !py-2 text-xs">Apply Changes</button>
                         </div>
-                        <div className="property-group">
-                            <label>Course Name</label>
-                            <input
-                                type="text"
-                                value={certificateData.course_name || ''}
-                                onChange={(e) => onDataChange({ ...certificateData, course_name: e.target.value })}
-                            />
-                        </div>
-                        <button className="btn btn-sm btn-secondary" onClick={refreshPreview}>
-                            Apply Changes
-                        </button>
                     </div>
                 </div>
             </div>

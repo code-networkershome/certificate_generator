@@ -9,6 +9,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
 import os
+from config import get_settings
 
 from models import TokenPayload
 
@@ -17,9 +18,10 @@ from models import TokenPayload
 # CONFIGURATION
 # ============================================
 
+settings = get_settings()
 # Supabase JWT secret - get from Supabase Dashboard -> Settings -> API -> JWT Secret
-SUPABASE_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET", "your-supabase-jwt-secret")
-JWT_ALGORITHM = "HS256"
+SUPABASE_JWT_SECRET = settings.SUPABASE_JWT_SECRET
+JWT_ALGORITHM = settings.JWT_ALGORITHM
 
 
 # ============================================
@@ -50,7 +52,7 @@ def create_access_token(user_id: str, expires_delta: Optional[timedelta] = None)
     if expires_delta:
         expire = now + expires_delta
     else:
-        expire = now + timedelta(hours=JWT_EXPIRATION_HOURS)
+        expire = now + timedelta(hours=settings.JWT_EXPIRATION_HOURS)
     
     payload = {
         "sub": user_id,
@@ -58,7 +60,7 @@ def create_access_token(user_id: str, expires_delta: Optional[timedelta] = None)
         "exp": expire
     }
     
-    return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+    return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
 
 
 def decode_access_token(token: str) -> dict:
@@ -206,8 +208,7 @@ async def get_current_user(
             detail="Invalid token: no user ID"
         )
     
-    # Auto-create user in database if they don't exist
-    # This syncs Supabase Auth users with the backend database
+    # Sync Supabase Auth users with the backend database if not exists
     try:
         from database import async_session
         from db_models import User
@@ -222,12 +223,12 @@ async def get_current_user(
             existing_user = result.scalar_one_or_none()
             
             if not existing_user:
-                # Create user with info from token
-                email = token_payload.get("email", f"{user_id}@supabase.user")
+                # Create user with minimal info from token
+                email = token_payload.get("email")
                 
-                # Check if this user should be an admin
+                # Check if this user should be initial admin (only on first creation)
                 initial_admin = os.environ.get("INITIAL_ADMIN_EMAIL", "").strip()
-                should_be_admin = email.lower() == initial_admin.lower() if initial_admin else False
+                should_be_admin = email and email.lower() == initial_admin.lower() if initial_admin else False
                 
                 new_user = User(
                     id=uuid.UUID(user_id),
@@ -237,17 +238,11 @@ async def get_current_user(
                 )
                 db.add(new_user)
                 await db.commit()
-                print(f"Auto-created user in database: {user_id} ({email}) - Admin: {should_be_admin}")
-            else:
-                # Check if we should upgrade existing user to admin
-                initial_admin = os.environ.get("INITIAL_ADMIN_EMAIL", "").strip()
-                if initial_admin and existing_user.email and existing_user.email.lower() == initial_admin.lower() and not existing_user.is_admin:
-                    existing_user.is_admin = True
-                    await db.commit()
-                    print(f"Upgraded existing user to admin: {existing_user.email}")
+                print(f"Auto-created user: {user_id} (Admin: {should_be_admin})")
+            # Removed redundant update/upgrade logic for existing users to prevent side-effects on every request
     except Exception as e:
         # Log but don't fail - user might already exist from race condition
-        print(f"Note: Could not auto-create user: {e}")
+        print(f"Note: User sync skipped: {e}")
     
     return user_id
 

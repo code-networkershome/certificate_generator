@@ -44,9 +44,7 @@ def get_database_url():
 engine = create_async_engine(
     get_database_url(),
     echo=settings.DEBUG,
-    pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20
+    pool_pre_ping=True
 )
 
 # Create async session factory
@@ -108,14 +106,23 @@ async def init_db():
     async with engine.connect() as conn:
         try:
             # Sync users table
-            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE"))
-            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()"))
+            # SQLite doesn't support IF NOT EXISTS in ALTER TABLE
+            # We run each statement in a try/except block
+            statements = [
+                "ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE",
+                "ALTER TABLE users ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP",
+                "ALTER TABLE certificates ADD COLUMN is_revoked BOOLEAN DEFAULT FALSE",
+                "ALTER TABLE certificates ADD COLUMN revoked_at TIMESTAMP WITH TIME ZONE",
+                "ALTER TABLE certificates ADD COLUMN revoked_by UUID",
+                "ALTER TABLE certificates ADD COLUMN revoke_reason TEXT"
+            ]
             
-            # Sync certificates table for revocation features
-            await conn.execute(text("ALTER TABLE certificates ADD COLUMN IF NOT EXISTS is_revoked BOOLEAN DEFAULT FALSE"))
-            await conn.execute(text("ALTER TABLE certificates ADD COLUMN IF NOT EXISTS revoked_at TIMESTAMP WITH TIME ZONE"))
-            await conn.execute(text("ALTER TABLE certificates ADD COLUMN IF NOT EXISTS revoked_by UUID REFERENCES users(id)"))
-            await conn.execute(text("ALTER TABLE certificates ADD COLUMN IF NOT EXISTS revoke_reason TEXT"))
+            for stmt in statements:
+                try:
+                    await conn.execute(text(stmt))
+                except Exception:
+                    # Column likely already exists
+                    pass
             
             await conn.commit()
             print("Database schema synchronization complete")
