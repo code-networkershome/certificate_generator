@@ -222,14 +222,13 @@ async def get_current_user(
             )
             existing_user = result.scalar_one_or_none()
             
+            # Check if this user should be initial admin
+            initial_admins = [e.strip().lower() for e in os.environ.get("INITIAL_ADMIN_EMAIL", "").split(",") if e.strip()]
+            email = token_payload.get("email")
+            should_be_admin = email and email.lower() in initial_admins if initial_admins else False
+            
             if not existing_user:
                 # Create user with minimal info from token
-                email = token_payload.get("email")
-                
-                # Check if this user should be initial admin (only on first creation)
-                initial_admin = os.environ.get("INITIAL_ADMIN_EMAIL", "").strip()
-                should_be_admin = email and email.lower() == initial_admin.lower() if initial_admin else False
-                
                 new_user = User(
                     id=uuid.UUID(user_id),
                     email=email,
@@ -239,7 +238,11 @@ async def get_current_user(
                 db.add(new_user)
                 await db.commit()
                 print(f"Auto-created user: {user_id} (Admin: {should_be_admin})")
-            # Removed redundant update/upgrade logic for existing users to prevent side-effects on every request
+            elif should_be_admin and not existing_user.is_admin:
+                # Auto-upgrade existing user if they are in the admin list
+                existing_user.is_admin = True
+                await db.commit()
+                print(f"Upgraded user to Admin: {email}")
     except Exception as e:
         # Log but don't fail - user might already exist from race condition
         print(f"Note: User sync skipped: {e}")
