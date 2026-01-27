@@ -1,14 +1,17 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
-import { authAPI } from '../api';
+import HistoryModal from './HistoryModal';
 
-const Navbar = ({ user, isAuthenticated }) => {
+const Navbar = ({ user, isAuthenticated, onLogout }) => {
     const { theme, toggleTheme } = useTheme();
     const navigate = useNavigate();
+    const [isHistoryOpen, setIsHistoryOpen] = React.useState(false);
 
     const handleLogout = async () => {
-        await authAPI.logout();
+        if (onLogout) {
+            await onLogout();
+        }
         navigate('/login');
     };
 
@@ -36,6 +39,12 @@ const Navbar = ({ user, isAuthenticated }) => {
                                 <Link to="/bulk" className="text-gray-600 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400 font-medium transition-colors">
                                     Bulk
                                 </Link>
+                                <button
+                                    onClick={() => setIsHistoryOpen(true)}
+                                    className="text-gray-600 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400 font-medium transition-colors"
+                                >
+                                    History
+                                </button>
                                 {user?.is_admin && (
                                     <Link to="/admin" className="px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-lg text-sm font-semibold">
                                         Admin
@@ -85,6 +94,11 @@ const Navbar = ({ user, isAuthenticated }) => {
                     </div>
                 </div>
             </div>
+
+            <HistoryModal
+                isOpen={isHistoryOpen}
+                onClose={() => setIsHistoryOpen(false)}
+            />
         </nav>
     );
 };

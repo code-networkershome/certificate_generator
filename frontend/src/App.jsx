@@ -11,12 +11,12 @@ import GeneratePage from './pages/GeneratePage';
 import BulkGeneratePage from './pages/BulkGeneratePage';
 
 function App() {
-    const { isAuthenticated, user, loading, login } = useAuth();
+    const { isAuthenticated, user, loading, login, logout } = useAuth();
 
     return (
         <ThemeProvider>
             <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                <Layout user={user} isAuthenticated={isAuthenticated}>
+                <Layout user={user} isAuthenticated={isAuthenticated} onLogout={logout}>
                     <Routes>
                         <Route path="/" element={<HomePage isAuthenticated={isAuthenticated} />} />
                         <Route

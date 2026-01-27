@@ -1,10 +1,10 @@
 import React from 'react';
 import Navbar from './Navbar';
 
-const Layout = ({ children, user, isAuthenticated }) => {
+const Layout = ({ children, user, isAuthenticated, onLogout }) => {
     return (
         <div className="min-h-screen bg-mesh transition-colors duration-300">
-            <Navbar user={user} isAuthenticated={isAuthenticated} />
+            <Navbar user={user} isAuthenticated={isAuthenticated} onLogout={onLogout} />
             <main className="pt-20 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
                 {children}
             </main>
