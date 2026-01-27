@@ -4,9 +4,10 @@ Certificate Generation System - FastAPI Application Entry Point
 
 from contextlib import asynccontextmanager
 from pathlib import Path
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 
 from routers import auth, templates, certificates, uploads, admin, users
 from database import init_db, close_db
@@ -53,17 +54,47 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# CORS Configuration - Strict and added immediately after App initialization
+ALLOWED_ORIGINS = [
+    "https://certificate-generator-123.vercel.app",
+    "http://localhost:3000",
+    "http://localhost:5173"
+]
 
-# CORS Middleware - Permissive for now to debug
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
     expose_headers=["*"],
     max_age=600,
 )
+
+# Custom Exception Handlers to ensure CORS headers are on error responses
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    origin = request.headers.get("origin")
+    response = JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail, "error": True}
+    )
+    if origin in ALLOWED_ORIGINS:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
+
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception):
+    origin = request.headers.get("origin")
+    response = JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error", "error": True}
+    )
+    if origin in ALLOWED_ORIGINS:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
 
 
 # CORS Debug Endpoint - Check if new code is deployed
@@ -71,11 +102,9 @@ app.add_middleware(
 async def cors_test():
     """Test endpoint to verify CORS configuration is deployed."""
     return {
-        "cors_version": "v4-schema-fix",
-        "allow_origins": "*",
-        "auto_error": "false",
-        "schema_fix": "removed",
-        "timestamp": "2026-01-23T18:15:00"
+        "status": "ok",
+        "cors_version": "cors-v5",
+        "allowed_origins": ALLOWED_ORIGINS
     }
 
 
