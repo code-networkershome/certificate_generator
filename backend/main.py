@@ -87,9 +87,12 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
+    import traceback
     origin = request.headers.get("origin")
     error_msg = str(exc)
+    error_trace = traceback.format_exc()
     print(f"DEBUG 500 ERROR: {error_msg}")
+    print(error_trace)
     
     response = JSONResponse(
         status_code=500,
@@ -97,7 +100,8 @@ async def generic_exception_handler(request: Request, exc: Exception):
             "detail": "Internal Server Error", 
             "error": True, 
             "debug_message": error_msg,
-            "error_type": type(exc).__name__
+            "error_type": type(exc).__name__,
+            "traceback": error_trace
         }
     )
     if origin in ALLOWED_ORIGINS:
@@ -113,7 +117,7 @@ async def cors_test():
     """Test endpoint to verify CORS configuration is deployed."""
     return {
         "status": "ok",
-        "cors_version": "cors-v7-diagnostic",
+        "cors_version": "cors-v8-traceback",
         "allowed_origins": ALLOWED_ORIGINS
     }
 
