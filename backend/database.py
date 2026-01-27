@@ -98,9 +98,30 @@ async def get_db_context() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def init_db():
-    """Initialize database tables"""
+    """Initialize database tables and run manual migrations."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    
+    # Manual migration for missing columns (since create_all doesn't alter existing tables)
+    # This is idempotent (ADD COLUMN IF NOT EXISTS)
+    from sqlalchemy import text
+    async with engine.connect() as conn:
+        try:
+            # Sync users table
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()"))
+            
+            # Sync certificates table for revocation features
+            await conn.execute(text("ALTER TABLE certificates ADD COLUMN IF NOT EXISTS is_revoked BOOLEAN DEFAULT FALSE"))
+            await conn.execute(text("ALTER TABLE certificates ADD COLUMN IF NOT EXISTS revoked_at TIMESTAMP WITH TIME ZONE"))
+            await conn.execute(text("ALTER TABLE certificates ADD COLUMN IF NOT EXISTS revoked_by UUID REFERENCES users(id)"))
+            await conn.execute(text("ALTER TABLE certificates ADD COLUMN IF NOT EXISTS revoke_reason TEXT"))
+            
+            await conn.commit()
+            print("Database schema synchronization complete")
+        except Exception as e:
+            await conn.rollback()
+            print(f"Warning: Manual migration failed: {e}")
 
 
 async def close_db():

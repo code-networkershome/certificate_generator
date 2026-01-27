@@ -117,7 +117,7 @@ async def cors_test():
     """Test endpoint to verify CORS configuration is deployed."""
     return {
         "status": "ok",
-        "cors_version": "cors-v8-traceback",
+        "cors_version": "cors-v9-final-fix",
         "allowed_origins": ALLOWED_ORIGINS
     }
 
