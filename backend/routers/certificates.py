@@ -11,6 +11,7 @@ import string
 import zipfile
 import os
 import uuid
+from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
