@@ -18,10 +18,18 @@ const removeToken = () => { }; // Supabase handles token removal
 // API request helper - now async to get Supabase token
 async function request(endpoint, options = {}) {
     const url = `${API_URL}${endpoint}`;
+
+    // Some endpoints don't need auth
+    const publicEndpoints = ['/auth/status', '/templates/list'];
+    const isPublic = publicEndpoints.includes(endpoint);
+
     const token = await getToken();
 
-    if (!token && endpoint !== '/auth/status') {
-        console.warn(`CERTGEN_API: Requesting ${endpoint} without token`);
+    if (!token && !isPublic) {
+        console.warn(`CERTGEN_API: Requesting protected ${endpoint} without token. Blocking request.`);
+        const error = new Error('Not authenticated');
+        error.status = 401;
+        throw error;
     }
 
     const config = {
@@ -38,6 +46,14 @@ async function request(endpoint, options = {}) {
 
         if (!response.ok) {
             console.error(`CERTGEN_API: Response failed for ${endpoint}. Status: ${response.status}`);
+
+            // Handle 401 specifically
+            if (response.status === 401) {
+                const error = new Error('Not authenticated');
+                error.status = 401;
+                throw error;
+            }
+
             const errorData = await response.json().catch(() => ({ detail: 'Request failed' }));
             const error = new Error(errorData.detail || errorData.error || 'Request failed');
             error.status = response.status;
@@ -47,7 +63,7 @@ async function request(endpoint, options = {}) {
         return response.json();
     } catch (err) {
         if (err.name !== 'AbortError' && !err.message?.includes('aborted')) {
-            console.error(`CERTGEN_API: Fetch error for ${endpoint}:`, err.message);
+            console.error(`CERTGEN_API: Error for ${endpoint}:`, err.message);
         }
         throw err;
     }
