@@ -6,6 +6,7 @@ export function useAuth() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const pendingFetch = useRef(null);
+    const lastFetchTime = useRef(0);
 
     const clearSession = async (reason = 'Manual logout') => {
         console.log(`CERTGEN_AUTH: Clearing session. Reason: ${reason}`);
@@ -16,13 +17,21 @@ export function useAuth() {
         }
         setIsAuthenticated(false);
         setUser(null);
+        lastFetchTime.current = 0; // Clear cache on logout
     };
 
     const fetchUserProfile = async (retryCount = 0) => {
-        // Prevent overlapping fetches
+        // Prevent overlapping fetches - deduplication layer 1
         if (pendingFetch.current && retryCount === 0) {
             console.log('CERTGEN_AUTH: Reusing existing profile fetch');
             return pendingFetch.current;
+        }
+
+        // prevent redundant fetches within a short window - deduplication layer 2
+        const now = Date.now();
+        if (now - lastFetchTime.current < 2000 && user && retryCount === 0) {
+            console.log('CERTGEN_AUTH: Using recently cached profile');
+            return user;
         }
 
         const fetchAction = async () => {
@@ -31,6 +40,7 @@ export function useAuth() {
                 const profile = await usersAPI.getMe();
                 console.log('CERTGEN_AUTH: Profile fetch success');
                 setUser(profile);
+                lastFetchTime.current = Date.now();
                 return profile;
             } catch (err) {
                 const isAbort = err.name === 'AbortError' || err.message?.includes('aborted');

@@ -119,7 +119,11 @@ export const authService = {
             if (error) throw error;
             return user;
         } catch (error) {
-            if (error.name !== 'AbortError' && !error.message?.includes('aborted')) {
+            const isExpected = error.message?.includes('Auth session missing') ||
+                error.name === 'AbortError' ||
+                error.message?.includes('aborted');
+
+            if (!isExpected) {
                 console.error('Supabase getUser error:', error);
             }
             return null;
